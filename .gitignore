@@ -1,0 +1,9 @@
+
+*.class
+*.txt
+*.7z
+.project
+sendmessage.py
+.settings/org.eclipse.jdt.core.prefs
+.project
+*.zip

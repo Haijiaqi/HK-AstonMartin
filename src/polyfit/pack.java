@@ -1,0 +1,95 @@
+package polyfit;
+
+import Jama.Matrix;
+
+public class pack {
+
+	static int maxorder = 11;
+
+	static double maxVTVtimes = 19;
+
+	static double maxVTPVtimes = 2.25;
+
+	static double aHuber = 3; // 10000;
+
+	static double steprate = 40;
+
+	static double accuracy = 0.0001;
+
+	static int recentdata = 21;
+
+	static int endprediction = 8;
+
+	static double interval = 0.01;
+
+	static double totalInterval = 3.65;
+
+	static double discountRate = 0.66;
+
+	static double[] stagesweight = { 0.05, 0.9, 0.05 };
+
+	Matrix matrix;
+
+	int id = 0;
+
+	double number = 1000000;
+
+	double value = 1000000;
+
+	public double r = 1000000;
+
+	double x;
+
+	double y;
+
+	public pack() {
+
+	}
+
+	public pack minus(pack otherPack) {
+		this.x -= otherPack.getX();
+		int divide = 864000 * 10;
+		this.x = this.getX() / divide;
+		return this;
+	}
+
+	public pack(double x, double y) {
+		super();
+		this.id = (int) x;
+		this.x = x;
+		this.y = y;
+	}
+
+	public Matrix getMatrix() {
+		return matrix;
+	}
+
+	public void setMatrix(Matrix matrix) {
+		this.matrix = matrix;
+	}
+
+	public double getNumber() {
+		return number;
+	}
+
+	public void setNumber(double number) {
+		this.number = number;
+	}
+
+	public double getX() {
+		return x;
+	}
+
+	public void setX(double x) {
+		this.x = x;
+	}
+
+	public double getY() {
+		return y;
+	}
+
+	public void setY(double y) {
+		this.y = y;
+	}
+
+}
