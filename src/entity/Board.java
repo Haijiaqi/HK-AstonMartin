@@ -97,7 +97,7 @@ public class Board {
 		mankindone.link = b;
 		double[] c = { 1, 1000, 4, 0, 0 };
 		mankindone.cons = c;
-//		mankindone.producedata("D:\\a\\evolution\\data.txt", 100);
+//		mankindone.producedata("D:/a/evolution/data.txt", 100);
 //		clone.fertilize(mankindone, 0.9);
 //		mankindone.sentlink(clone, 0.1);
 		chromosome pre = board.population[0].copy();

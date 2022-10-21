@@ -257,15 +257,23 @@ public class Polynomial {
 		return probability;
 	}
 
-	public Matrix process(ArrayList<pack> points, int order, int type) {
+	public Matrix process(ArrayList<pack> points, int order, int type, int extrapolations) {
 		try {
 			analysis(points, false);
-			rawdata = points;
-			double[] x = new double[points.size()];
-			double[] y = new double[points.size()];
+			if (extrapolations > 0) {
+				rawdata = new ArrayList<>();
+				for (int i = 0; i < points.size(); i++) {
+					rawdata.add(points.get(i));
+				}
+				this.extrapolations(pack.interval, extrapolations);
+			} else {
+				rawdata = points;
+			}
+			double[] x = new double[rawdata.size()];
+			double[] y = new double[rawdata.size()];
 			for (int i = 0; i < x.length; i++) {
-				x[i] = points.get(i).getX();
-				y[i] = points.get(i).getY();
+				x[i] = rawdata.get(i).getX();
+				y[i] = rawdata.get(i).getY();
 			}
 			Matrix l = organizel(y);
 			pack former = new pack();
@@ -295,8 +303,8 @@ public class Polynomial {
 						addAnalyticFormulaInOrder(robustestimition(B, l)
 						.getMatrix(), start);
 					}
-					realy = points.get(points.size() - 1).getY();
-					estimatey = this.f(points.get(points.size() - 1).getX(), 0);
+					realy = rawdata.get(rawdata.size() - 1).getY();
+					estimatey = this.f(rawdata.get(rawdata.size() - 1).getX(), 0);
 					if (Math.abs(estimatey - realy) < 2 * (max - min)) {
 						Polynomial pi = this.d(1);
 						// if (pi.x.size() == 1) {
@@ -321,6 +329,9 @@ public class Polynomial {
 						continue;
 					}
 				}
+			}
+			if (extrapolations > 0) {
+				rawdata = points;
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -359,16 +370,24 @@ public class Polynomial {
 		return this.x.get(this.x.size() - 1);
 	}
 
-	public Matrix processR(ArrayList<pack> points, int order) {
+	public Matrix processR(ArrayList<pack> points, int order, int extrapolations) {
 		try {
 			analysis(points, false);
 			if (points.size() > order) {
-				rawdata = points;
-				double[] x = new double[points.size()];
-				double[] y = new double[points.size()];
+				if (extrapolations > 0) {
+					rawdata = new ArrayList<>();
+					for (int i = 0; i < points.size(); i++) {
+						rawdata.add(points.get(i));
+					}
+					this.extrapolations(pack.interval, extrapolations);
+				} else {
+					rawdata = points;
+				}
+				double[] x = new double[rawdata.size()];
+				double[] y = new double[rawdata.size()];
 				for (int i = 0; i < x.length; i++) {
-					x[i] = points.get(i).getX();
-					y[i] = points.get(i).getY();
+					x[i] = rawdata.get(i).getX();
+					y[i] = rawdata.get(i).getY();
 				}
 				Matrix l = organizel(y);
 				Matrix B = organizeB(x, order);
@@ -377,6 +396,9 @@ public class Polynomial {
 					imum = getimum(this.x.size() - 1);
 				} else {
 					System.err.println("需要拟合" + order);
+				}
+				if (extrapolations > 0) {
+					rawdata = points;
 				}
 			} else {
 				System.err.println("需要拟合" + order + "次函数，但你只给了" + points.size()
@@ -481,6 +503,19 @@ public class Polynomial {
 			e.printStackTrace();
 		}
 		return newPoint;
+	}
+	public ArrayList<pack> extrapolations(double interval, int n) {
+		try {
+			double lastx = rawdata.get(rawdata.size() - 1).getX();
+			double lasty = rawdata.get(rawdata.size() - 1).getY();
+			for (int i = 0; i < n; i++) {
+				rawdata.add(new pack(lastx + (i + 1) * interval, lasty));
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return rawdata;
 	}
 
 	public pack extrapolationOne(double interval, Double Y) {
@@ -683,9 +718,9 @@ public class Polynomial {
 	// int order特征线次数,
 	// double total总额,
 	// int xIndex指定解析式索引
-	public double getStringWeight(double x, double start, int order,
+	public pack getStringWeight(double x, double start, double order,
 			double total, int xIndex, double radix) {
-		double result = 0;
+		pack result = new pack();
 		if (this.x.get(xIndex).getRowDimension() - 1 == 2
 				&& this.x.get(xIndex).get(0, 0) != 0) {
 			double rightY = f(rawdata.get(rawdata.size() - 1).getX(), 0);
@@ -695,6 +730,8 @@ public class Polynomial {
 			pack imum = getimum(xIndex);
 			// 要使左短右长、只有右的线提前结束，从而留下有积分意义的线
 			if (this.x.get(xIndex).get(0, 0) * (rightY - leftY) >= 0) {
+				result.setX(0);
+				result.setY(1);
 				return result;
 			}
 			// 获取左端点
@@ -747,8 +784,16 @@ public class Polynomial {
 					leftPoints.add(midLeft);
 					rightPoints.add(midRight);
 				}
-				leftPolynomial.processLS(leftPoints, order);
-				rightPolynomial.processLS(rightPoints, order);
+				if (order == 0.5) {
+					double midx = (known.getX() + mirror.getX()) / 2;
+					pack midLeft = new pack(midx - width, height - (this.f(this.x.get(1).getArray(), midx) - imumHeight));
+					midx = (known.getX() + imum.getX()) / 2;
+					pack midRight = new pack(midx + width, height - (this.f(this.x.get(1).getArray(), midx) - imumHeight));
+					leftPoints.add(midLeft);
+					rightPoints.add(midRight);
+				}
+				leftPolynomial.processLS(leftPoints, order == 0.5 ? 2 : (int)order);
+				rightPolynomial.processLS(rightPoints, order == 0.5 ? 2 : (int)order);
 				if (leftPolynomial.start < rightPolynomial.start) {
 					function0.assemble(leftPolynomial, 1);
 					function0.assemble(rightPolynomial, 1);
@@ -763,7 +808,7 @@ public class Polynomial {
 			double integral = function1.f(function1.end, 0)
 					- function1.f(function1.start, 0);
 			// 使用总额求感兴趣点对应的小段部位的部分小额
-			double realinter = 0;
+			/*double realinter = 0;
 			double realhalf = 0;
 			double rate = 0;
 			double needinter = 0;
@@ -773,8 +818,13 @@ public class Polynomial {
 				realinter = x - start;
 				needinter = rate * realinter;
 				x = start + needinter;
-			}
-			result = total * (function1.f(x, 0) - function1.f(start, 0))/ Math.abs(integral);
+			}*/
+			double zero = rawdata.get(0).getX();
+			double ready = (function1.f(x, 0) - function1.f(zero, 0))/ (Math.abs(integral) / 2);
+			ready = Math.abs(ready) > 1 ? Math.signum(ready) : ready;
+			double weight = total * (function1.f(x, 0) - function1.f(start, 0))/ Math.abs(integral);
+			result.setX(weight);
+			result.setY(ready);
 		}
 		return result;
 	}

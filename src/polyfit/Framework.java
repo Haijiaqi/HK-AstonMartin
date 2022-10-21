@@ -33,13 +33,13 @@ public class Framework {
 
 	public static String newdate = "2020-08-19";
 
-	public static String basepath = new File("").getAbsolutePath(); // "C:\\b"; // 
+	public static String basepath = new File("").getAbsolutePath(); // "C:/b"; // 
 
-	public static String workpath = basepath + "\\work\\date\\record\\list.txt";
+	public static String workpath = basepath + "/work/date/record/list.txt";
 
-	public static String fundDir = basepath + "\\fund";
+	public static String fundDir = basepath + "/fund";
 
-	public static String balanceDir = basepath + "\\balance";
+	public static String balanceDir = basepath + "/balance";
 
 	public static int listinfolength = 19;
 
@@ -71,9 +71,9 @@ public class Framework {
 		long yesterday = today - 86400 * 1000;
 		yesterdate = stampToDate(String.valueOf(yesterday));
 		lastdate = getlastday();
-		if (new File(fundDir + "\\" + todate).listFiles().length > 3000) {
+		if (new File(fundDir + "/" + todate).listFiles().length > 3000) {
 			newdate = todate;
-		} else if (new File(fundDir + "\\" + lastdate).listFiles().length > 3000) {
+		} else if (new File(fundDir + "/" + lastdate).listFiles().length > 3000) {
 			newdate = lastdate;
 		}
 		logpath = getPath("today", "out", "log");
@@ -91,7 +91,7 @@ public class Framework {
 		// log.addHandler(fileHandler);
 		boolean startornot = new File(getPath("today", "fund", "000000"))
 				.exists()
-				&& new File(fundDir + "\\" + gettodate()).listFiles().length > 3000;
+				&& new File(fundDir + "/" + gettodate()).listFiles().length > 3000;
 		return startornot;
 	}
 	public static boolean immediateGo() {
@@ -104,7 +104,7 @@ public class Framework {
 	}
 
 	// 初筛
-	public static void preliminaryProcess() {
+	public static void preliminaryProcess(int paint) {
 		try {
 			// 获取当天目录列表
 			String pathl = getPath("today", "record", "list");
@@ -138,9 +138,12 @@ public class Framework {
 				if (outpoints.size() <= pack.maxorder * 5) {
 					continue;
 				}
+				if (paint > 0) {
+					verify.saveparam(basepath + "/pythonparam.txt", thispath + ";" + rawinfo[0]);					
+				}
 				// 计策修改时关注这里以下，确保能够被分配到对应的风险级中
 				// 原始数据给予解析
-				Fund aFund = new Fund(rawinfo, outpoints, 2);
+				Fund aFund = new Fund(rawinfo, outpoints, 2, paint);
 				// 无增减就不处理
 				if (aFund.Erate == 1 || aFund.risklevel > pack.maxorder) {
 					continue;
@@ -178,7 +181,7 @@ public class Framework {
 		}
 	}
 
-	public static void tailProcess() {
+	public static void tailProcess(int paint) {
 		// 获取当天全列表的指数
 		String allpath = getPath("newday", "index", "all");
 		// clearFile(allpath);
@@ -197,7 +200,7 @@ public class Framework {
 				String iline = null;
 				for (int k = 0; (iline = bri.readLine()) != null; k++) {
 					try {
-						Fund aFund = new Fund(iline);
+						Fund aFund = new Fund(iline, paint);
 						// 无增减就不处理
 						// if (aFund.Erate == 1) {
 						// 	continue;
@@ -244,7 +247,7 @@ public class Framework {
 		String thispath = getPath("today", "fund", "000000");
 		ArrayList<pack> outpoints = verify.loadpoints(thispath, 0, 1000);
 		String[] rawinfo = {"000000", "上证指数", "0", "0", "0"};
-		Fund aFund = new Fund(rawinfo, outpoints, 1);
+		Fund aFund = new Fund(rawinfo, outpoints, 1, 0);
 		double coefficient = aFund.Erate > 1 ? aFund.Erate : 1;
 		Investment.amount = (coefficient - 1) * 20000;
 	}
@@ -344,7 +347,7 @@ public class Framework {
 				}
 				// 计策修改时关注这里以下，确保能够被分配到对应的风险级中
 				// 原始数据给予解析
-				Fund aFund = new Fund(rawinfo, outpoints, 2);
+				Fund aFund = new Fund(rawinfo, outpoints, 2, 0);
 				// 无增减就不处理
 				if (aFund.Erate == 1) {
 					continue;
@@ -711,7 +714,7 @@ public class Framework {
 	public static void sendMessage() {
 		try {
 			Process pr = Runtime.getRuntime().exec(
-					"python D:\\Aproject\\sendmessage.py");
+					"python D:/Aproject/sendmessage.py");
 			System.err.println("has called python to send message!");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -741,12 +744,12 @@ public class Framework {
 		File dir = new File(fundDir);
 		File[] files = dir.listFiles();
 		if (files != null && files.length > 0) {
-			String path0 = files[0].getAbsolutePath() + "\\" + "000000.txt";
+			String path0 = files[0].getAbsolutePath() + "/" + "000000.txt";
 			if (new File(path0).exists()) {
 				before = files[0].getName();
 				for (int i = 1; i < files.length; i++) {
 					current = files[i].getName();
-					String path = files[i].getAbsolutePath() + "\\"
+					String path = files[i].getAbsolutePath() + "/"
 							+ "000000.txt";
 					if (gettodate().equals(current)) {
 						break;
@@ -769,7 +772,7 @@ public class Framework {
 		File[] files = dir.listFiles();
 		if (files != null) {
 			for (int i = files.length - 2; i >= 0; i--) {
-				String path = files[i].getAbsolutePath() + "\\" + "000000.txt";
+				String path = files[i].getAbsolutePath() + "/" + "000000.txt";
 				result = files[i].getName();
 				if (new File(path).exists()) {
 					return result;
@@ -965,7 +968,7 @@ public class Framework {
 
 	public static String getPath(String date, String type, String name) {
 		if ("balance".equals(type)) {
-			return balanceDir + "\\" + name + ".txt";
+			return balanceDir + "/" + name + ".txt";
 		}
 		switch (date) {
 		case "today":
@@ -984,7 +987,7 @@ public class Framework {
 			break;
 		}
 		if ("fund".equals(type)) {
-			return fundDir + "\\" + date + "\\" + name + ".txt";// .replace("000001",
+			return fundDir + "/" + date + "/" + name + ".txt";// .replace("000001",
 			// name);
 		}
 		switch (type) {

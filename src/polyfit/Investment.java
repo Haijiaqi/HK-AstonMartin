@@ -19,7 +19,7 @@ public class Investment {
 	double balance = 0;
 	double cash = 0;
 	int flag = 0;
-	// static String balanceDir = "D:\\a\\temp\\balance\\";
+	// static String balanceDir = "D:/a/temp/balance/";
 	static double amount = 450;
 
 	String infoString = "";

@@ -17,18 +17,18 @@ public class verify {
 	public static void verify2() {
 		String[] info = { "270008", "0", "0", "1.23", "1.23", "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%", "0", "0", "0", "0", "0.05%" };
 		Fund aFund = new Fund(info, loadpoints(
-				"D:\\Aproject\\test\\270008.txt", 0, 1000)
-				,2);
+				"D:/Aproject/test/270008.txt", 0, 1000)
+				,2, 0);
 	}
 
 	public static void verify1() {
 		// TODO Auto-generated method stub
-		// Board.datapath = "D:\\a\\evolution\\data.txt";
-		// Board.sleeppath = "D:\\a\\evolution\\sleep.txt";
+		// Board.datapath = "D:/a/evolution/data.txt";
+		// Board.sleeppath = "D:/a/evolution/sleep.txt";
 		// Board.evolution(4, 0);
-		// formMatrix("D:\\a\\prefund", "D:\\a\\evolution\\statistic.txt");
+		// formMatrix("D:/a/prefund", "D:/a/evolution/statistic.txt");
 		if (true) {
-			File dir = new File("D:\\a\\fund");
+			File dir = new File("D:/a/fund");
 			boolean ifstart = false;
 			File[] files = dir.listFiles();
 			for (int i = 3000; i < files.length && i < 5000; i++) {
@@ -55,9 +55,9 @@ public class verify {
 							.size(); j++) {
 						realnewpoints.add(outpoints.get(j));
 					}
-					Fund aFund = new Fund(null, basepoints,2);
+					Fund aFund = new Fund(null, basepoints,2, 0);
 					appenddata(
-							"D:\\a\\prefund\\" + files[i].getName(),
+							"D:/a/prefund/" + files[i].getName(),
 							String.valueOf(String.format("%.2f",
 									aFund.polynomial_all.evaltopratelast()))
 									+ ";"
@@ -102,32 +102,32 @@ public class verify {
 		// System.err.println("zero " + zero);
 		// System.err.println(pi.f(zero, 0));
 		// }
-		// appenddata("D:\\a\\" + pack.maxorder + ".txt", i + path + " "
+		// appenddata("D:/a/" + pack.maxorder + ".txt", i + path + " "
 		// + (A.getRowDimension() - 1) + "\n");
 
-		// savedata("D:\\a\\polynomial_all.txt", aFund.polynomial_all,
+		// savedata("D:/a/polynomial_all.txt", aFund.polynomial_all,
 		// points);
-		// savenewdata("D:\\a\\all_newpoints.txt", aFund.all_newpoints);
+		// savenewdata("D:/a/all_newpoints.txt", aFund.all_newpoints);
 
 		/*
-		 * savedata("D:\\a\\polynomial_recent.txt", aFund.polynomial_recent,
+		 * savedata("D:/a/polynomial_recent.txt", aFund.polynomial_recent,
 		 * aFund.polynomial_recent.rawdata);
-		 * savenewdata("D:\\a\\recent_newpoints.txt", aFund.recent_newpoints);
-		 * savedata("D:\\a\\quadratic.txt", aFund.quadratic,
+		 * savenewdata("D:/a/recent_newpoints.txt", aFund.recent_newpoints);
+		 * savedata("D:/a/quadratic.txt", aFund.quadratic,
 		 * aFund.quadratic_newpoints);
-		 * savenewdata("D:\\a\\quadratic_newpoints.txt",
-		 * aFund.quadratic_newpoints); saveparam("D:\\a\\pythonparam.txt", path
+		 * savenewdata("D:/a/quadratic_newpoints.txt",
+		 * aFund.quadratic_newpoints); saveparam("D:/a/pythonparam.txt", path
 		 * + ";" + pointnum + ";" + aFund.risklevel + ";" + pack.recentdata);
 		 * 
 		 * try { Thread.sleep(60); Process pr = Runtime.getRuntime().exec(
-		 * "python D:\\a\\testanytime1.py"); // p.analysis(points, true); }
+		 * "python D:/a/testanytime1.py"); // p.analysis(points, true); }
 		 * catch (InterruptedException | IOException e) { e.printStackTrace(); }
 		 */
 
 	}
 
 	public static void formMatrix(String readPath, String writePath) {
-		File dir = new File(readPath);// "D:\\a\\prefund");
+		File dir = new File(readPath);// "D:/a/prefund");
 		File[] files = dir.listFiles();
 		int[][] map = new int[101][81];
 		for (int f = 0; f < files.length && f < 1000; f++) {
@@ -203,11 +203,34 @@ public class verify {
 			if (!pointfile.exists()) {
 				return points;
 			}
+			BufferedReader bt = new BufferedReader(new FileReader(path));
+			String alinet = null;
+			pack pointt = null;
+			ArrayList<pack> pointst = new ArrayList<pack>();
+			for (int i = 0; i < 5 && (alinet = bt.readLine()) != null; i++) {
+				if (i == 0) {
+					String[] xy = alinet.split(",");
+					pointt = new pack(Double.valueOf(xy[0]), 999999999);
+				}
+				if (i > 0) {
+					String[] xy = alinet.split(",");
+					pointt = new pack(Double.valueOf(xy[0]), Double.valueOf(xy[0]) - pointst.get(i - 1).getX());
+				}
+				pointst.add(pointt);
+			}
+			double min = 999999999;
+			for (int i = 0; i < pointst.size(); i++) {
+				if (min > pointst.get(i).getY()) {
+					min = pointst.get(i).getY();
+				}
+			}
+			int divide = (int)min * 100;
+			bt.close();
 			BufferedReader br = new BufferedReader(new FileReader(path));
 			String aline = null;
 			pack firstpoint = null;
 			for (int i = 0; i < end && (aline = br.readLine()) != null; i++) {
-				if (i == 0) {
+				if (i == start) {
 					String[] xy = aline.split(",");
 					firstpoint = new pack(Double.valueOf(xy[0]),
 							"None".equals(xy[1]) ? 0 : Double.valueOf(xy[1]));
@@ -216,7 +239,7 @@ public class verify {
 					String[] xy = aline.split(",");
 					pack point = new pack(Double.valueOf(xy[0]),
 							Double.valueOf("None".equals(xy[1]) ? 0 : Double.valueOf(xy[1])));
-					point.minus(firstpoint);
+					point.minus(firstpoint, divide);
 					points.add(point);
 				}
 			}

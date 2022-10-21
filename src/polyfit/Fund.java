@@ -1,5 +1,6 @@
 package polyfit;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -49,7 +50,7 @@ public class Fund {
 	// 	givedata(information, points);
 	// }
 
-	public Fund(String[] information, ArrayList<pack> points, int order) {
+	public Fund(String[] information, ArrayList<pack> points, int order, int paint) {
 		this.points = points;
 		this.information = information;
 		code = Framework.safeget(information, 0);
@@ -70,11 +71,41 @@ public class Fund {
 			risklevel = (int)((points.size() / 245.0) * pack.maxorder);
 		}
 		risklevel = risklevel > pack.maxorder ? pack.maxorder : risklevel;
-		macroscopic();
-		microcosmic(order);
+		macroscopic(paint, 0);
+		microcosmic(order, paint, 0);
+		if (paint > 0) {
+			try {
+				Process pr = Runtime.getRuntime().exec("python " + Framework.basepath + "/canpaintin20210702.py");
+				Thread.sleep(paint);
+			} catch (InterruptedException | IOException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	public Fund(ArrayList<pack> points, int order, int paint, int extrapolations) {
+		this.points = points;
+		macroscopic(paint, extrapolations);
+		microcosmic(order, paint, extrapolations);
+		if (paint > 0) {
+			try {
+				verify.savenewdata(Framework.basepath + "/rawdata.txt", points);
+				String command = "python3 " + Framework.basepath + "/canpaintin20210702.py";
+				System.out.println(command);
+				Process pr = Runtime.getRuntime().exec(command);
+				Thread.sleep(paint);
+			} catch (InterruptedException | IOException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 
-	public Fund(String info) {
+	public Fund(String info, int paint) {
 		code = Framework.getInfoFromJson(info, "code", ":");
 		name = Framework.getInfoFromJson(info, "name", ":");
 		totalshare = Double.valueOf(Framework.getInfoFromJson(info, "totalshare", ":"));
@@ -94,7 +125,7 @@ public class Fund {
 			// + Framework.getFieldPart("tailpoints", organizePoints(quadraticpoints));
 		// ArrayList<pack> outpoints = verify.loadpoints(path, 0, 1000);
 		// risklevel = polynomial_all.process(points, risklevel).getRowDimension() - 1;
-		extractindex(true, 2);
+		extractindex(true, 2, paint, 0);
 	}
 
 	// 计策修改时关注这里
@@ -124,17 +155,18 @@ public class Fund {
 	}
 
 	// 计策修改时关注这里
-	public void macroscopic() {
+	public void macroscopic(int paint, int extrapolations) {
 		// 加载当前项目在余额表中的总份额
 		// investments = Investment.loads(code);
 		// totalshare = gettotalshare();
 		// risklevel = polynomial_all.process(points,
 		// risklevel).getRowDimension() - 1;
-		risklevel = polynomial_all.process(points, risklevel, 1)
+		risklevel = polynomial_all.process(points, risklevel, 1, extrapolations)
 		.getRowDimension() - 1;
 		risklevel = (int) (polynomial_all.worseAnalysis(points, produceRiskByName()).r / 0.1) + 1;
-		ArrayList<pack> recentpoints = new ArrayList<pack>();
-		
+		if (paint > 0) {
+			polynomial_all.paintCurve(Framework.basepath + "/polynomial.txt", pack.interval);
+		}
 		Polynomial polynomial_all1;
 		polynomial_all1 = polynomial_all.d(1);
 		extreme = polynomial_all1.findzeropoint();
@@ -150,7 +182,10 @@ public class Fund {
 		tailstartcubic = findTailStart(keypoints, polynomial_all, (int)localinter); // 17);
 		cubicpoints = polynomial_all.pickdata(tailstartcubic);
 		Polynomial polynomial_recent1;
-		polynomial_recent.process(cubicpoints, 3, 1); // 3, 1);
+		polynomial_recent.process(cubicpoints, 3, 1, extrapolations); // 3, 1);
+		if (paint > 0) {
+			polynomial_recent.paintCurve(Framework.basepath + "/cubic.txt", pack.interval);
+		}
 		polynomial_recent1 = polynomial_recent.d(1);
 		double[] extremecubic = {};
 		extremecubic = polynomial_recent1.findzeropoint();
@@ -221,11 +256,11 @@ public class Fund {
 		}
 	}
 
-	public void microcosmic(int order) {
+	public void microcosmic(int order, int paint, int extrapolations) {
 		// 加载当前项目在余额表中的总份额
 		investments = Investment.loads(code);
 		totalshare = gettotalshare();
-		extractindex(false, order);
+		extractindex(false, order, paint, extrapolations);
 	}
 	
 	public double produceRiskByName () {
@@ -281,23 +316,23 @@ public class Fund {
 		pointsU.add(EPointU);
 		ArrayList<pack> pointsD = (ArrayList<pack>)quadraticpoints.clone();
 		pointsD.add(EPointD);
-		quadraticU.processR(pointsU, 2);
-		quadraticD.processR(pointsD, 2);
+		quadraticU.processR(pointsU, 2, 0);
+		quadraticD.processR(pointsD, 2, 0);
 		result.x = quadraticU.getStringWeight(x + pack.interval, x, 2,
-		fundamental, 1, 0.5);
+		fundamental, 1, 0.5).getX();
 		result.y = quadraticD.getStringWeight(x + pack.interval, x, 2,
-		fundamental, 1, 0.5);
+		fundamental, 1, 0.5).getX();
 
-		quadratic.processR(quadraticpoints, 2);
+		quadratic.processR(quadraticpoints, 2, 0);
 		result.value = quadratic.getStringWeight(x + pack.interval, x, 2,
-				fundamental, 1, 0.5); 
+				fundamental, 1, 0.5).getX(); 
 		// result.r = pack.stagesweight[0] * result.x + pack.stagesweight[1] * result.value + pack.stagesweight[2] * result.y;
 		result.r = maxInthree(result.x, result.value, result.y, true);
 		return result;
 	}
 	
 	// 在线计算势能值，当减为负，当加为正。
-	public pack onLineDemandInvast(double fundamental, boolean online, int order) {
+	public pack onLineDemandInvast(double fundamental, boolean online, int order, int paint, int extrapolations) {
 		pack result = new pack();
 		double x = points.get(points.size() - 1).getX() + pack.interval;
 		if (online) {
@@ -313,9 +348,9 @@ public class Fund {
 				pointsOnline.add(rawTailPoint);
 			}
 
-			quadratic.processR(pointsOnline, 2);
+			quadratic.processR(pointsOnline, 2, extrapolations);
 			result.value = quadratic.getStringWeight(x + pack.interval, x, 2,
-					fundamental, 1, 0.5); 
+					fundamental, 1, 0.5).getX(); 
 			result.value /= (1 + onlinePoint.getY() * 5);
 			result.r = result.value;
 		} else {
@@ -327,18 +362,34 @@ public class Fund {
 			pointsU.add(EPointU);
 			ArrayList<pack> pointsD = (ArrayList<pack>)quadraticpoints.clone();
 			pointsD.add(EPointD);
-			quadraticU.processR(pointsU, 2);
-			quadraticD.processR(pointsD, 2);
+			quadraticU.processR(pointsU, 2, extrapolations);
+			quadraticD.processR(pointsD, 2, extrapolations);
 			result.x = quadraticU.getStringWeight(x + pack.interval, x, 2,
-			fundamental, 1, 0.5);
+			fundamental, 1, 0.5).getX();
 			result.y = quadraticD.getStringWeight(x + pack.interval, x, 2,
-			fundamental, 1, 0.5);
+			fundamental, 1, 0.5).getX();
 
-			quadratic.processR(quadraticpoints, 2);
+			quadratic.processR(quadraticpoints, 2, extrapolations);
 			result.value = quadratic.getStringWeight(x + pack.interval, x, 2,
-					fundamental, 1, 0.5); 
+					fundamental, 1, 0.5).getX(); 
 			// result.r = pack.stagesweight[0] * result.x + pack.stagesweight[1] * result.value + pack.stagesweight[2] * result.y;
 			result.r = maxInthree(result.x, result.value, result.y, true);
+		}
+		if (paint > 0) {
+			verify.saveparam(Framework.basepath + "/weightup.txt", "");
+			verify.saveparam(Framework.basepath + "/weightdn.txt", "");
+			if (result.value > 0) {
+				verify.appenddata(Framework.basepath + "/weightup.txt",
+				String.valueOf(x + 0 * pack.interval) + ","
+				+ String.valueOf(result.value * 1000 + points.get(points.size() - 1).getY()) + "\n");
+			}
+			if (result.value < 0) {
+				verify.appenddata(Framework.basepath + "/weightdn.txt",
+				String.valueOf(x + 0 * pack.interval) + ","
+				+ String.valueOf(result.value * 1000 + points.get(points.size() - 1).getY()) + "\n");
+			}
+			verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(result.value));
+			quadratic.paintCurve(Framework.basepath + "/quatratic.txt", pack.interval);
 		}
 		return result;
 	}
@@ -428,7 +479,7 @@ public class Fund {
 		Polynomial polynomial_recent1;
 		Polynomial polynomial_recent2;
 		mediumrisklevel = polynomial_recent.process(recentpoints,
-				mediumrisklevel, 1).getRowDimension() - 1;
+				mediumrisklevel, 1, 0).getRowDimension() - 1;
 		polynomial_recent1 = polynomial_recent.d(1);
 		extreme = polynomial_recent1.findzeropoint();
 		polynomial_recent2 = polynomial_recent1.d(1);
@@ -536,10 +587,10 @@ public class Fund {
 				+ conclusion + ",";
 	}
 
-	public String extractindex(boolean online, int order) {
+	public String extractindex(boolean online, int order, int paint, int extrapolations) {
 		outString = "";
 		pack result = new pack();
-		result = onLineDemandInvast(1, online, order);
+		result = onLineDemandInvast(1, online, order, paint, extrapolations);
 		Erate = result.r;// Investment.amount);
 		rateString = "(" + verify.cutDouble(result.x, 4) + "|" + verify.cutDouble(result.value, 4) + "|" + verify.cutDouble(result.y, 4) + ")";
 		// 加一是为了保持reliability函数的最小改动
@@ -723,7 +774,7 @@ public class Fund {
 	}
 
 	public pack parsePoint(String info) {
-		String[] xy = info.split("\\|");
+		String[] xy = info.split("/|");
 		pack result = new pack(Double.valueOf(xy[0]), Double.valueOf(xy[1]));
 		return result;
 	}

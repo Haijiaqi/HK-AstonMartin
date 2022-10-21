@@ -11,9 +11,9 @@ import java.util.ArrayList;
 public class main {
 	// private static Logger logger = LogManager.getLogger("HelloLog4j");
 	@SuppressWarnings("unused")
-	public static void main(String[] args) {
+	public static void maint(String[] args) {
 
-		// File dir = new File("D:\\Aproject\\fund");
+		// File dir = new File("D:/Aproject/fund");
 		// File[] files = dir.listFiles();
 		for (int i = 0; true; i++) {
 			// String date = files[i].getName();
@@ -27,11 +27,11 @@ public class main {
 				Framework.freshNAV();// "listPath", "tradeListPath");
 				Framework.executesettle();
 				// Framework.produceFundIndex();
-				Framework.preliminaryProcess();
+				Framework.preliminaryProcess(0);
 			}
 			Framework.clock(14, 40, true);
 			if (Framework.immediateGo()) {
-				Framework.tailProcess();
+				Framework.tailProcess(0);
 				Framework.stockMarket();
 				Framework.produceTradeList();
 			}
@@ -39,29 +39,32 @@ public class main {
 		}
 	}
 
-	public static void maint(String[] args) {
-		ArrayList<pack> points = verify.loadpoints(
-				"D:\\a\\temp\\20210702t\\initpointsss.txt", 0, 100);
-		Polynomial p = new Polynomial();
-		int risklevel;
-		risklevel = p.processLS(points, 2).getRowDimension() - 1;
-		p.getStringWeight(2, 0, 2, 10, 1, 0.5);
-		p.paintCurve("D:\\a\\temp\\20210702t\\rawpoints.txt", 0.05);
-		try {
-			Process pr = Runtime.getRuntime().exec(
-					"python D:\\a\\temp\\20210702t\\canpaintin.py");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+	@SuppressWarnings("unused")
+	public static void main(String[] args) {
+		String thispath = Framework.basepath + "/fund/bitcoin/D7points.txt";
+		for (int i = 0; i < 600; i++) {
+			ArrayList<pack> outpoints = verify.loadpoints(thispath, 0 + i, 240 + i);
+			// Investment.balanceDir = balanceDir;
+			// 没加载到点就下一项
+			if (outpoints.size() <= pack.maxorder * 5) {
+			} else {
+				int paint = 5000;
+				if (paint > 0) {
+					verify.saveparam(Framework.basepath + "/pythonparam.txt", thispath + ";" + "rawinfo[0]");					
+				}
+				// 计策修改时关注这里以下，确保能够被分配到对应的风险级中
+				// 原始数据给予解析
+				Fund aFund = new Fund(outpoints, 2, paint, 6);
+			}
 		}
 	}
 
 	public static void mains(String[] args) {
 		String code = "009893";
-		String fundPath = "D:\\Free C\\Program Files\\eclipse32\\workspace\\polyfit\\fund\\2021-08-10\\" + code + ".txt";
-		verify.saveparam("D:\\a\\temp\\20210702t\\pythonparam.txt", fundPath + ";450;11;450");
-		verify.saveparam("D:\\a\\temp\\20210702t\\actionpoints.txt", "");
-		verify.saveparam("D:\\a\\temp\\20210702t\\actionpointss.txt", "");
+		String fundPath = "D:/Free C/Program Files/eclipse32/workspace/polyfit/fund/2021-08-10/" + code + ".txt";
+		verify.saveparam("D:/a/temp/20210702t/pythonparam.txt", fundPath + ";450;11;450");
+		verify.saveparam("D:/a/temp/20210702t/actionpoints.txt", "");
+		verify.saveparam("D:/a/temp/20210702t/actionpointss.txt", "");
 		double tnum = 0;
 		for (int num = 250; num <= 250; num += 1) {
 			ArrayList<pack> points = verify.loadpoints(
@@ -112,12 +115,12 @@ public class main {
 					}
 				}
 			}
-			quadratic.processR(quadraticpoints, 2);
-			// quadratic.paintCurve("D:\\a\\temp\\20210702t\\quadratic0.txt",
+			quadratic.processR(quadraticpoints, 2, 0);
+			// quadratic.paintCurve("D:/a/temp/20210702t/quadratic0.txt",
 			// 0.005);
 			// ArrayList<pack> apoint = new ArrayList<pack>();
 			double x = points.get(points.size() - 1).getX();
-			double w = quadratic.getStringWeight(x + pack.interval, x, 2, 1, 1, 0.5);
+			double w = quadratic.getStringWeight(x + pack.interval, x, 2, 1, 1, 0.5).getX();
 			System.out.println(w);// + "+" + risklevel + "+" +
 									// p.evaltopratelast());
 			double y = w * 10 + points.get(points.size() - 1).getY();
@@ -126,33 +129,33 @@ public class main {
 			// + points.get(points.size() - 1).getY());
 			// apoint.add(ap);
 			// if (w != 0) {
-			// verify.appenddata("D:\\a\\temp\\20210702t\\actionpoints.txt",
+			// verify.appenddata("D:/a/temp/20210702t/actionpoints.txt",
 			// String.valueOf(x) + "," + String.valueOf(y) + "\n");
 			// }
 			if (w > 0) {
 				tnum = x;
 				verify.appenddata(
-						"D:\\a\\temp\\20210702t\\actionpoints.txt",
+						"D:/a/temp/20210702t/actionpoints.txt",
 						String.valueOf(x + 1 * pack.interval) + ","
 								+ String.valueOf(y) + "\n");
 			}
 			if (w < 0 && ((x - tnum) / pack.interval) > 7) {
 				// if (w < 0) {
 				verify.appenddata(
-						"D:\\a\\temp\\20210702t\\actionpointss.txt",
+						"D:/a/temp/20210702t/actionpointss.txt",
 						String.valueOf(x + 1 * pack.interval) + ","
 								+ String.valueOf(y) + "\n");
 			}
-			verify.savedata("D:\\a\\temp\\20210702t\\rawpoints.txt", p, points);
-			// p.paintCurve("D:\\a\\temp\\20210702t\\rawpoints.txt", 0.05);
-			quadratic.paintCurve("D:\\a\\temp\\20210702t\\quadratic.txt", 0.01);
+			verify.savedata("D:/a/temp/20210702t/rawpoints.txt", p, points);
+			// p.paintCurve("D:/a/temp/20210702t/rawpoints.txt", 0.05);
+			quadratic.paintCurve("D:/a/temp/20210702t/quadratic.txt", 0.01);
 
 			try {
 				Framework.getHttp("http://fundgz.1234567.com.cn/js/010963.js?rt=1628759569296");
 				if (num > 244 && risklevel > 1
 						&& points.get(points.size() - 1).getX() >= 0.90) {
 					Process pr = Runtime.getRuntime().exec(
-							"python D:\\a\\canpaintin20210702.py");
+							"python D:/a/canpaintin20210702.py");
 					Thread.sleep(1500);
 
 				}
@@ -196,17 +199,17 @@ public class main {
 	//
 	public static void mainss(String[] args) {
 		// TODO Auto-generated method stub
-		// Board.datapath = "D:\\a\\evolution\\data.txt";
-		// Board.sleeppath = "D:\\a\\evolution\\sleep.txt";
+		// Board.datapath = "D:/a/evolution/data.txt";
+		// Board.sleeppath = "D:/a/evolution/sleep.txt";
 		// Board.evolution(4, 0);
-		// formMatrix("D:\\a\\prefund", "D:\\a\\evolution\\statistic.txt");
+		// formMatrix("D:/a/prefund", "D:/a/evolution/statistic.txt");
 		String[] c = { "160632", "鹏华酒A", "PHJA", "1624809600.0", "1.1420",
 				"2.4150", "0.88", "1.06", "-2.64", "20.97", "10.23", "92.31",
 				"157.81", "216.78", "7.23", "360.47", "1430236800.0",
 				"131.2762", "0.12%" };
 
 		if (true) {
-			File dir = new File("D:\\a\\fund");
+			File dir = new File("D:/a/fund");
 			boolean ifstart = false;
 			File[] files = dir.listFiles();
 			for (int i = 2000; i < files.length && i < 5000; i++) {
@@ -233,9 +236,9 @@ public class main {
 							.size(); j++) {
 						realnewpoints.add(outpoints.get(j));
 					}
-					Fund aFund = new Fund(c, basepoints, 2);
+					Fund aFund = new Fund(c, basepoints, 2, 0);
 					appenddata(
-							"D:\\a\\prefund\\" + files[i].getName(),
+							"D:/a/prefund/" + files[i].getName(),
 							String.valueOf(String.format("%.2f",
 									aFund.polynomial_all.evaltopratelast()))
 									+ ";"
@@ -286,32 +289,32 @@ public class main {
 	// // System.err.println("zero " + zero);
 	// // System.err.println(pi.f(zero, 0));
 	// // }
-	// // appenddata("D:\\a\\" + pack.maxorder + ".txt", i + path + " "
+	// // appenddata("D:/a/" + pack.maxorder + ".txt", i + path + " "
 	// // + (A.getRowDimension() - 1) + "\n");
 	//
-	// // savedata("D:\\a\\polynomial_all.txt", aFund.polynomial_all,
+	// // savedata("D:/a/polynomial_all.txt", aFund.polynomial_all,
 	// // points);
-	// // savenewdata("D:\\a\\all_newpoints.txt", aFund.all_newpoints);
+	// // savenewdata("D:/a/all_newpoints.txt", aFund.all_newpoints);
 	//
 	// /*
-	// * savedata("D:\\a\\polynomial_recent.txt", aFund.polynomial_recent,
+	// * savedata("D:/a/polynomial_recent.txt", aFund.polynomial_recent,
 	// * aFund.polynomial_recent.rawdata);
-	// * savenewdata("D:\\a\\recent_newpoints.txt", aFund.recent_newpoints);
-	// * savedata("D:\\a\\quadratic.txt", aFund.quadratic,
+	// * savenewdata("D:/a/recent_newpoints.txt", aFund.recent_newpoints);
+	// * savedata("D:/a/quadratic.txt", aFund.quadratic,
 	// * aFund.quadratic_newpoints);
-	// * savenewdata("D:\\a\\quadratic_newpoints.txt",
-	// * aFund.quadratic_newpoints); saveparam("D:\\a\\pythonparam.txt", path
+	// * savenewdata("D:/a/quadratic_newpoints.txt",
+	// * aFund.quadratic_newpoints); saveparam("D:/a/pythonparam.txt", path
 	// * + ";" + pointnum + ";" + aFund.risklevel + ";" + pack.recentdata);
 	// *
 	// * try { Thread.sleep(60); Process pr = Runtime.getRuntime().exec(
-	// * "python D:\\a\\testanytime1.py"); // p.analysis(points, true); }
+	// * "python D:/a/testanytime1.py"); // p.analysis(points, true); }
 	// * catch (InterruptedException | IOException e) { e.printStackTrace(); }
 	// */
 	//
 	// }
 	//
 	// public static void formMatrix(String readPath, String writePath) {
-	// File dir = new File(readPath);// "D:\\a\\prefund");
+	// File dir = new File(readPath);// "D:/a/prefund");
 	// File[] files = dir.listFiles();
 	// int[][] map = new int[101][81];
 	// for (int f = 0; f < files.length && f < 1000; f++) {

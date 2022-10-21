@@ -31,6 +31,7 @@ public class pack {
 	Matrix matrix;
 
 	int id = 0;
+	double val = 0;
 
 	double number = 1000000;
 
@@ -50,6 +51,14 @@ public class pack {
 		this.x -= otherPack.getX();
 		int divide = 864000 * 10;
 		this.x = this.getX() / divide;
+		this.y -= otherPack.getY();
+		return this;
+	}
+
+	public pack minus(pack otherPack, int divide) {
+		this.x -= otherPack.getX();
+		this.x = this.getX() / divide;
+		this.y -= otherPack.getY();
 		return this;
 	}
 
@@ -58,6 +67,7 @@ public class pack {
 		this.id = (int) x;
 		this.x = x;
 		this.y = y;
+		this.val = y;
 	}
 
 	public Matrix getMatrix() {
