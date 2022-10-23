@@ -732,7 +732,7 @@ public class Polynomial {
 			// 要使左短右长、只有右的线提前结束，从而留下有积分意义的线
 			if (this.x.get(xIndex).get(0, 0) * (rightY - leftY) >= 0) {
 				result.setX(0);
-				result.setY(1);
+				result.setY(0);
 				return result;
 			}
 			// 获取左端点
@@ -811,7 +811,7 @@ public class Polynomial {
 			double integral = function1.f(function1.end, 0)
 					- function1.f(function1.start, 0);
 			// 使用总额求感兴趣点对应的小段部位的部分小额
-			/*double realinter = 0;
+			double realinter = 0;
 			double realhalf = 0;
 			double rate = 0;
 			double needinter = 0;
@@ -821,9 +821,9 @@ public class Polynomial {
 				realinter = x - start;
 				needinter = rate * realinter;
 				x = start + needinter;
-			}*/
+			}
 			double zero = rawdata.get(0).getX();
-			double ready = (function1.f(x, 0) - function1.f(zero, 0))/ (Math.abs(integral) / 1);
+			double ready = (function1.f(x, 0) - function1.f(zero, 0))/ (Math.abs(integral) / 1.33333333);
 			ready = Math.abs(ready) > 1 ? Math.signum(ready) : ready;
 			double weight = total * (function1.f(x, 0) - function1.f(start, 0))/ Math.abs(integral);
 			result.setX(weight);

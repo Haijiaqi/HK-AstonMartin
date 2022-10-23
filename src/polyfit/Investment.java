@@ -15,6 +15,7 @@ public class Investment {
 	double cost = 0;
 	double NAV = 0;
 	double inrates = 0;
+	double stockshare = 0;
 	double share = 0;
 	double balance = 0;
 	double cash = 0;
@@ -50,7 +51,7 @@ public class Investment {
 	}
 
 	public Investment(int id, long timestamp, String fund, double cost,
-			double NAV, double inrates, double share, double balance,
+			double NAV, double inrates, double stockshare, double share, double balance,
 			double cash) {
 		super();
 		this.id = id;
@@ -59,6 +60,7 @@ public class Investment {
 		this.cost = cost;
 		this.NAV = NAV;
 		this.inrates = inrates;
+		this.stockshare = stockshare;
 		this.share = share;
 		this.balance = balance;
 		this.cash = cash;
@@ -79,13 +81,13 @@ public class Investment {
 				Long.valueOf(info[1]), info[2], Double.valueOf(info[3]),
 				Double.valueOf(info[4]), Double.valueOf(info[5]),
 				Double.valueOf(info[6]), Double.valueOf(info[7]),
-				Double.valueOf(info[8]));
+				Double.valueOf(info[8]), Double.valueOf(info[9]));
 		return aInvestment;
 	}
 
 	public static void trade(Investment trade, String info1, String info2, int type) {
 		double number = Double.valueOf(trade.cost);
-		if (number > 0) {
+		if (number >= 0) {
 			info2 = info2.substring(0, info2.indexOf("%"));
 			buy(trade.fund, number, Double.valueOf(info1),
 					Double.valueOf(info2) / 100, type);
@@ -97,7 +99,7 @@ public class Investment {
 	public String print() {
 		String result = "";
 		result += id + "," + timestamp + "," + fund + "," + cost + "," + NAV
-				+ "," + inrates + "," + share + "," + balance + "," + cash;
+				+ "," + inrates + "," + stockshare + "," + share + "," + balance + "," + cash;
 		return result;
 	}
 
@@ -105,15 +107,28 @@ public class Investment {
 		ArrayList<Investment> investments = loads(aim);
 		Investment thisInvestment = null;
 		share *= -1;
-		for (int i = 0; share > 0 && i < investments.size(); i++) {
-			thisInvestment = investments.get(i);
-			share = thisInvestment
-					.sellsome(
-							share,
-							newNAV,
-							type == 1 ? outrates((Framework.getTodayTimestamp() - thisInvestment.timestamp) / 86400000) : 0.008);
+		if (share != 0.000000001) {			
+			double preCost = gettotalcost(investments);
+			double preCash = gettotalcash(investments);
+			for (int i = 0; share > 0 && i < investments.size(); i++) {
+				thisInvestment = investments.get(i);
+				share = thisInvestment
+						.sellsome(
+								share,
+								newNAV,
+								type == 1 ? outrates((Framework.getTodayTimestamp() - thisInvestment.timestamp) / 86400000) : 0.001);
+			}
+			double nowCost = gettotalcost(investments);
+			double nowCash = gettotalcash(investments);
+			double deltaCost = preCost - nowCost;
+			double deltaCash = nowCash - preCash;
+			if (deltaCash / deltaCost > 1.001) {
+				for (int i = 0; i < investments.size(); i++) {
+					investments.get(i).balance = investments.get(i).share * newNAV;
+				}
+				rewrites(aim, investments);
+			}
 		}
-		rewrites(aim, investments);
 	}
 
 	public static void buy(String aim, double cost, double newNAV,
@@ -121,18 +136,27 @@ public class Investment {
 		ArrayList<Investment> investments = loads(aim);
 		Investment thisInvestment = null;
 		boolean alreadyhas = false;
-		for (int i = 0; i < investments.size(); i++) {
-			thisInvestment = investments.get(i);
-			if (thisInvestment.timestamp == (type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp())) {
-				thisInvestment.buysome(cost, newNAV, inrates);
-				alreadyhas = true;
+		if (cost != 0) {
+			for (int i = 0; i < investments.size(); i++) {
+				thisInvestment = investments.get(i);
+				if (thisInvestment.timestamp == (type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp())) {
+					thisInvestment.buysome(cost, newNAV, inrates);
+					alreadyhas = true;
+				}
+			}
+			if (!alreadyhas) {
+				Investment aInvestment = new Investment(0,
+				(type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp()), aim, cost, newNAV, inrates);
+				if (cost / Investment.amount > 0.001) {
+					investments.add(aInvestment);
+				}
 			}
 		}
-		if (!alreadyhas) {
-			Investment aInvestment = new Investment(0,
-			(type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp()), aim, cost, newNAV, inrates);
-			investments.add(aInvestment);
+		for (int i = 0; i < investments.size(); i++) {
+			investments.get(i).stockshare = investments.get(i).share;
+			investments.get(i).balance = investments.get(i).share * newNAV;
 		}
+		System.out.println("refresh !!!" + newNAV);
 		rewrites(aim, investments);
 	}
 
@@ -181,10 +205,10 @@ public class Investment {
 		return result;
 	}
 
-	public static double gettotalshare(String aim) {
+	public static double gettotalshare(String aim, int type) {
 		double result = 0;
 		ArrayList<Investment> investments = loads(aim);
-		result = gettotalshare(investments);
+		result = gettotalshare(investments, type);
 		return result;
 	}
 
@@ -195,10 +219,28 @@ public class Investment {
 		return result;
 	}
 
-	public static double gettotalshare(ArrayList<Investment> investments) {
+	public static double gettotalcost(ArrayList<Investment> investments) {
 		double result = 0;
 		for (int i = 0; i < investments.size(); i++) {
-			result += investments.get(i).share;
+			result += investments.get(i).share * investments.get(i).NAV;
+		}
+		return result;
+	}
+	public static double gettotalcash(ArrayList<Investment> investments) {
+		double result = 0;
+		for (int i = 0; i < investments.size(); i++) {
+			result += investments.get(i).cash;
+		}
+		return result;
+	}
+	public static double gettotalshare(ArrayList<Investment> investments, int type) {
+		double result = 0;
+		for (int i = 0; i < investments.size(); i++) {
+			if (type == 0) {
+				result += investments.get(i).stockshare;
+			} else {
+				result += investments.get(i).share;
+			}
 		}
 		return result;
 	}
@@ -209,7 +251,7 @@ public class Investment {
 		for (int i = 0; i < investments.size(); i++) {
 			if (investments.get(i).timestamp <= end
 					&& investments.get(i).timestamp > start) {
-				result += investments.get(i).share;
+				result += investments.get(i).stockshare;
 			}
 		}
 		return result;

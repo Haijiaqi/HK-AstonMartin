@@ -42,20 +42,25 @@ public class main {
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		String thispath = Framework.basepath + "/fund/bitcoin/D7points.txt";
-		for (int i = 10; i < 600; i++) {
-			String[] infomation = {"BTC" + i, "BTC" + i};
+		String path = Framework.getPath("balance", "balance", "BTC");
+		verify.saveparam(path, "");
+		for (int i = 0; i < 500; i++) {
+			String[] infomation = {"BTC", "BTC" + i};
 			ArrayList<pack> outpoints = verify.loadpoints(thispath, 0 + i, 240 + i, -1);
 			// Investment.balanceDir = balanceDir;
 			// 没加载到点就下一项
 			if (outpoints.size() <= pack.maxorder * 5) {
 			} else {
-				int paint = 0;//5000;
+				int paint = 0;//5000;//
+				if (i < 173) {
+					paint = 0;
+				}
 				if (paint > 0) {
 					verify.saveparam(Framework.basepath + "/pythonparam.txt", thispath + ";" + "rawinfo[0]");					
 				}
 				// 计策修改时关注这里以下，确保能够被分配到对应的风险级中
 				// 原始数据给予解析
-				Fund aFund = new Fund(infomation, outpoints, 2, paint, 12);
+				Fund aFund = new Fund(infomation, outpoints, 0.5, paint, 12);
 				verify.saveparam(Framework.basepath + "/processInfo.txt", "");
 				verify.appenddata(Framework.basepath + "/processInfo.txt"
 						// replacepath(

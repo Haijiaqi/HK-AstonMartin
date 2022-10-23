@@ -465,14 +465,25 @@ public class Framework {
 					// aInvestment.fund = aindex[0] + "," + aindex[1];
 					aInvestment.fund = Framework.getInfoFromJson(iline, "code", ":") + "," + Framework.getInfoFromJson(iline, "name", ":");
 					// aInvestment.share = Double.valueOf(safeget(aindex, 2));
-					aInvestment.share = Double.valueOf(Framework.getInfoFromJson(iline, "totalshare", ":"));
+					aInvestment.stockshare = Double.valueOf(Framework.getInfoFromJson(iline, "totalshare", ":"));
+					aInvestment.share = Double.valueOf(Framework.getInfoFromJson(iline, "realshare", ":"));
 					// aInvestment.inrates = Double.valueOf(safeget(aindex, 6));
 					aInvestment.inrates = Double.valueOf(Framework.getInfoFromJson(iline, "Erate", ":")) - 1;
 					// data.add(aindex);
 					if (aInvestment.inrates < 0) {
 					// 导出的风险指数小于1且总额大于1
-						aInvestment.cost = aInvestment.share * aInvestment.inrates;
+						if (aInvestment.inrates > -1) {
+							aInvestment.cost = aInvestment.stockshare * aInvestment.inrates * -1;
+							aInvestment.cost = aInvestment.cost - (aInvestment.stockshare - aInvestment.share);
+							if (aInvestment.cost < 0) {
+								aInvestment.cost = 0.000000001;
+							}
+							aInvestment.cost *= -1;
+						}
 					} else if (aInvestment.inrates > 0) {
+						if (aInvestment.inrates > 0.99) {
+							System.out.println("");
+						}
 						aInvestment.cost = Investment.amount * aInvestment.inrates;
 						aInvestment.cost = verify.cutDouble(aInvestment.cost, 2);
 					}
@@ -590,7 +601,8 @@ public class Framework {
 		for (int i = 0; i < data.size(); i++) {
 			if (data.get(i).inrates < 1 && data.get(i).share > minOutShare) {
 				// 导出的风险指数小于1且总额大于1
-				data.get(i).cost = data.get(i).share * data.get(i).inrates * 10;
+				data.get(i).cost = data.get(i).stockshare * data.get(i).inrates;
+				data.get(i).cost = data.get(i).cost - (data.get(i).stockshare - data.get(i).share);
 				// 按风险额计算待减额
 				if (data.get(i).cost < minOutShare) {
 					// 过于小的，按最小卖出值看待
@@ -682,7 +694,7 @@ public class Framework {
 				ArrayList<Investment> trades = getfundtrade("BTC");
 				for (int j = 0; j < trades.size(); j++) {
 					Investment.trade(trades.get(j), price,
-							"0.8%", 0);
+							"0.1%", 0);
 				}
 			} catch (Exception e) {
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -716,7 +728,8 @@ public class Framework {
 					// aInvestment.fund = aindex[0] + "," + aindex[1];
 					aInvestment.fund = Framework.getInfoFromJson(iline, "code", ":") + "," + Framework.getInfoFromJson(iline, "name", ":");
 					// aInvestment.share = Double.valueOf(safeget(aindex, 2));
-					aInvestment.share = Double.valueOf(Framework.getInfoFromJson(iline, "totalshare", ":"));
+					aInvestment.stockshare = Double.valueOf(Framework.getInfoFromJson(iline, "totalshare", ":"));
+					aInvestment.share = Double.valueOf(Framework.getInfoFromJson(iline, "realshare", ":"));
 					// aInvestment.inrates = Double.valueOf(safeget(aindex, 6));
 					aInvestment.inrates = Double.valueOf(Framework.getInfoFromJson(iline, "conclusion", ":"));
 					// data.add(aindex);

@@ -21,6 +21,7 @@ public class Fund {
 	int predictBefore = 0;
 	double Erate = 1;
 	double totalshare = 0;
+	double realshare = 0;
 	ArrayList<pack> quadraticpoints;
 	// double longEY = 0;
 	// double mediumEY = 0;
@@ -140,7 +141,7 @@ public class Fund {
 			System.out.println("code");
 		}
 		investments = Investment.loads(code);
-		totalshare = gettotalshare();
+		totalshare = gettotalshare(1);
 		// risklevel = polynomial_all.process(points,
 		// risklevel).getRowDimension() - 1;
 		risklevel = polynomial_all.processLS(points, risklevel)
@@ -262,7 +263,8 @@ public class Fund {
 	public void microcosmic(double order, int paint, int extrapolations) {
 		// 加载当前项目在余额表中的总份额
 		investments = Investment.loads(code);
-		totalshare = gettotalshare();
+		totalshare = gettotalshare(0);
+		realshare = gettotalshare(1);
 		extractindex(false, order, paint, extrapolations);
 	}
 	
@@ -338,7 +340,7 @@ public class Fund {
 	public pack onLineDemandInvast(double fundamental, boolean online, double order, int paint, int extrapolations) {
 		pack result = new pack();
 		pack weight = new pack();
-		double x = points.get(points.size() - 1).getX() + pack.interval;
+		double x = points.get(points.size() - 1).getX();// + pack.interval;
 		if (online) {
 			ArrayList<pack> pointsOnline = (ArrayList<pack>)quadraticpoints.clone();
 			pack onlinePoint = getEstimitValueFromNet();
@@ -360,7 +362,7 @@ public class Fund {
 			result.value /= (1 + onlinePoint.getY() * 5);
 			result.r = result.value;
 		} else {
-			Polynomial quadraticU = new Polynomial();
+			/*Polynomial quadraticU = new Polynomial();
 			Polynomial quadraticD = new Polynomial();
 			pack EPointU = polynomial_all.extrapolationOne(pack.interval, true);
 			pack EPointD = polynomial_all.extrapolationOne(pack.interval, false);
@@ -373,7 +375,7 @@ public class Fund {
 			result.x = quadraticU.getStringWeight(x + pack.interval, x, order,
 			fundamental, 1, 0.5).getX();
 			result.y = quadraticD.getStringWeight(x + pack.interval, x, order,
-			fundamental, 1, 0.5).getX();
+			fundamental, 1, 0.5).getX();*/
 
 			quadratic.processR(quadraticpoints, 2, extrapolations);
 			weight = quadratic.getStringWeight(x + pack.interval, x, order,
@@ -390,13 +392,16 @@ public class Fund {
 				verify.appenddata(Framework.basepath + "/weightup.txt",
 				String.valueOf(x + 0 * pack.interval) + ","
 				+ String.valueOf(result.value * 1000 + points.get(points.size() - 1).getY()) + "\n");
+				verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(Math.round(result.r * 1000000) / 1000000.0));
 			}
 			if (result.value < 0) {
-				verify.appenddata(Framework.basepath + "/weightdn.txt",
-				String.valueOf(x + 0 * pack.interval) + ","
-				+ String.valueOf(result.value * 1000 + points.get(points.size() - 1).getY()) + "\n");
+				if (result.val > -1) {
+					verify.appenddata(Framework.basepath + "/weightdn.txt",
+					String.valueOf(x + 0 * pack.interval) + ","
+					+ String.valueOf(result.val * 100 + points.get(points.size() - 1).getY()) + "\n");
+					verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(Math.round(result.val * 1000000) / 1000000.0));
+				}
 			}
-			verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(Math.round(result.r * 1000000) / 1000000.0));
 			quadratic.paintCurve(Framework.basepath + "/quatratic.txt", pack.interval);
 		}
 		return result;
@@ -604,12 +609,13 @@ public class Fund {
 		// 加一是为了保持reliability函数的最小改动
 		reliability = reliability(Erate + 1);
 		// double conclusion = 0.925 * reliability + 0.075 * Erate;
-		if (Erate > 0) {
+		if (Erate >= 0) {
 			conclusion = reliability * Erate / (1 + fee);
 		} else {
-			conclusion = - reliability * Erate / (1 + fee);
-			Erate = -result.val;
+			Erate = result.val;
+			conclusion = reliability * Erate / (1 + fee);
 		}
+		Erate *= getdiscount(Erate, lastpointtoprate, pack.discountRate);
 		Erate += 1; //reliability * Erate / (1 + fee) + 1;
 		// 计策修改时关注这里，第7个值（[6]，这里是conclusion）是真正参与测评的。增持与减持列表同使用该值。该值貌似始终需要大于零（sortLevelIndex）。区别在于是否小于1，这涉及到分值叉录入、减持计算等等；TODO
 		outString = printFund();
@@ -623,6 +629,7 @@ public class Fund {
 		return outString = Framework.getFieldPart("code", code)
 		+ Framework.getFieldPart("name", name + rateString)
 		+ Framework.getFieldPart("totalshare", totalshare)
+		+ Framework.getFieldPart("realshare", realshare)
 		+ Framework.getFieldPart("Erate", Erate)
 		+ Framework.getFieldPart("reliability", reliability)
 		+ Framework.getFieldPart("conclusion", conclusion)
@@ -694,7 +701,7 @@ public class Fund {
 			// 如果判升
 			if (lasttoprate > standard) {
 				// 高于低水位，补段除以水位线补段
-				return (1 - lasttoprate) / (1 - standard);
+				return (1 - lasttoprate);
 			} else {
 				// 低于低水位，置信升率为1
 				return 1; // (standard - lasttoprate) / (standard);
@@ -703,7 +710,7 @@ public class Fund {
 			// 如果判降
 			if (lasttoprate < (1 - standard)) {
 				// 低于低水位的对称线，本段除以低水位补长度
-				return lasttoprate / (1 - standard); // (lasttoprate - standard)
+				return lasttoprate; // (lasttoprate - standard)
 														// / (1 - standard);
 			} else {
 				// 高于低水位的对称线，置信降率为1
@@ -727,9 +734,9 @@ public class Fund {
 	}
 
 	// 获取当前项的持有总额
-	public double gettotalshare() {
+	public double gettotalshare(int type) {
 		// 简单加和
-		return Investment.gettotalshare(investments);
+		return Investment.gettotalshare(investments, type);
 	}
 
 	public pack getEstimitValueFromNet() {
