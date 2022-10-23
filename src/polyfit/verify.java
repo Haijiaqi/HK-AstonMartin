@@ -17,7 +17,7 @@ public class verify {
 	public static void verify2() {
 		String[] info = { "270008", "0", "0", "1.23", "1.23", "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%" , "0.05%", "0", "0", "0", "0", "0.05%" };
 		Fund aFund = new Fund(info, loadpoints(
-				"D:/Aproject/test/270008.txt", 0, 1000)
+				"D:/Aproject/test/270008.txt", 0, 1000, -1)
 				,2, 0);
 	}
 
@@ -42,7 +42,7 @@ public class verify {
 				}
 				int needmorerealpointnum = pack.endprediction - 2;
 				for (int pointnum = pack.recentdata + needmorerealpointnum;; pointnum += 1) {
-					ArrayList<pack> outpoints = loadpoints(path, 0, pointnum);
+					ArrayList<pack> outpoints = loadpoints(path, 0, pointnum, -1);
 					if (pointnum > outpoints.size()) {
 						break;
 					}
@@ -196,7 +196,7 @@ public class verify {
 		}
 	}
 
-	public static ArrayList<pack> loadpoints(String path, int start, int end) {
+	public static ArrayList<pack> loadpoints(String path, int start, int end, int type) {
 		ArrayList<pack> points = new ArrayList<pack>();
 		try {
 			File pointfile = new File(path);
@@ -239,7 +239,7 @@ public class verify {
 					String[] xy = aline.split(",");
 					pack point = new pack(Double.valueOf(xy[0]),
 							Double.valueOf("None".equals(xy[1]) ? 0 : Double.valueOf(xy[1])));
-					point.minus(firstpoint, divide);
+					point.minus(firstpoint, divide, type);
 					points.add(point);
 				}
 			}

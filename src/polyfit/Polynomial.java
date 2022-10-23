@@ -1,5 +1,6 @@
 package polyfit;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -804,6 +805,8 @@ public class Polynomial {
 			}
 			// 积分
 			Polynomial function1 = function0.s(1);
+			//function0.display(5000);
+			//function1.display(5000);
 			// 对积分函数求拟合域（拟合原函数所用的点的区域）上的总积分值
 			double integral = function1.f(function1.end, 0)
 					- function1.f(function1.start, 0);
@@ -820,7 +823,7 @@ public class Polynomial {
 				x = start + needinter;
 			}*/
 			double zero = rawdata.get(0).getX();
-			double ready = (function1.f(x, 0) - function1.f(zero, 0))/ (Math.abs(integral) / 2);
+			double ready = (function1.f(x, 0) - function1.f(zero, 0))/ (Math.abs(integral) / 1);
 			ready = Math.abs(ready) > 1 ? Math.signum(ready) : ready;
 			double weight = total * (function1.f(x, 0) - function1.f(start, 0))/ Math.abs(integral);
 			result.setX(weight);
@@ -1123,6 +1126,23 @@ public class Polynomial {
 		}
 		verify.saveparam(path, result);
 		return 0;
+	}
+	public int display(int paint) {
+		if (paint > 0) {
+			try {
+				paintCurve(Framework.basepath + "/function.txt", pack.interval);
+				String command = "python3 " + Framework.basepath + "/fastpaint.py";
+				System.out.println(command);
+				Process pr = Runtime.getRuntime().exec(command);
+				Thread.sleep(paint);
+			} catch (InterruptedException | IOException e) {
+				((Throwable) e).printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return paint;
 	}
 
 	// public pack robustestimitionoptimization(Matrix B, Matrix l) {

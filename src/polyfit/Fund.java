@@ -50,7 +50,7 @@ public class Fund {
 	// 	givedata(information, points);
 	// }
 
-	public Fund(String[] information, ArrayList<pack> points, int order, int paint) {
+	public Fund(String[] information, ArrayList<pack> points, double order, int paint) {
 		this.points = points;
 		this.information = information;
 		code = Framework.safeget(information, 0);
@@ -85,7 +85,10 @@ public class Fund {
 			}
 		}
 	}
-	public Fund(ArrayList<pack> points, int order, int paint, int extrapolations) {
+	public Fund(String[] information, ArrayList<pack> points, double order, int paint, int extrapolations) {
+		this.information = information;
+		code = Framework.safeget(information, 0);
+		name = Framework.safeget(information, 1);
 		this.points = points;
 		macroscopic(paint, extrapolations);
 		microcosmic(order, paint, extrapolations);
@@ -256,7 +259,7 @@ public class Fund {
 		}
 	}
 
-	public void microcosmic(int order, int paint, int extrapolations) {
+	public void microcosmic(double order, int paint, int extrapolations) {
 		// 加载当前项目在余额表中的总份额
 		investments = Investment.loads(code);
 		totalshare = gettotalshare();
@@ -332,8 +335,9 @@ public class Fund {
 	}
 	
 	// 在线计算势能值，当减为负，当加为正。
-	public pack onLineDemandInvast(double fundamental, boolean online, int order, int paint, int extrapolations) {
+	public pack onLineDemandInvast(double fundamental, boolean online, double order, int paint, int extrapolations) {
 		pack result = new pack();
+		pack weight = new pack();
 		double x = points.get(points.size() - 1).getX() + pack.interval;
 		if (online) {
 			ArrayList<pack> pointsOnline = (ArrayList<pack>)quadraticpoints.clone();
@@ -349,8 +353,10 @@ public class Fund {
 			}
 
 			quadratic.processR(pointsOnline, 2, extrapolations);
-			result.value = quadratic.getStringWeight(x + pack.interval, x, 2,
-					fundamental, 1, 0.5).getX(); 
+			weight = quadratic.getStringWeight(x + pack.interval, x, order,
+					fundamental, 1, 0.5); 
+			result.value = weight.getX();
+			result.val = weight.getY();
 			result.value /= (1 + onlinePoint.getY() * 5);
 			result.r = result.value;
 		} else {
@@ -364,16 +370,18 @@ public class Fund {
 			pointsD.add(EPointD);
 			quadraticU.processR(pointsU, 2, extrapolations);
 			quadraticD.processR(pointsD, 2, extrapolations);
-			result.x = quadraticU.getStringWeight(x + pack.interval, x, 2,
+			result.x = quadraticU.getStringWeight(x + pack.interval, x, order,
 			fundamental, 1, 0.5).getX();
-			result.y = quadraticD.getStringWeight(x + pack.interval, x, 2,
+			result.y = quadraticD.getStringWeight(x + pack.interval, x, order,
 			fundamental, 1, 0.5).getX();
 
 			quadratic.processR(quadraticpoints, 2, extrapolations);
-			result.value = quadratic.getStringWeight(x + pack.interval, x, 2,
-					fundamental, 1, 0.5).getX(); 
+			weight = quadratic.getStringWeight(x + pack.interval, x, order,
+					fundamental, 1, 0.5); 
+			result.value = weight.getX();
 			// result.r = pack.stagesweight[0] * result.x + pack.stagesweight[1] * result.value + pack.stagesweight[2] * result.y;
 			result.r = maxInthree(result.x, result.value, result.y, true);
+			result.val = weight.getY();
 		}
 		if (paint > 0) {
 			verify.saveparam(Framework.basepath + "/weightup.txt", "");
@@ -388,7 +396,7 @@ public class Fund {
 				String.valueOf(x + 0 * pack.interval) + ","
 				+ String.valueOf(result.value * 1000 + points.get(points.size() - 1).getY()) + "\n");
 			}
-			verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(result.value));
+			verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(Math.round(result.r * 1000000) / 1000000.0));
 			quadratic.paintCurve(Framework.basepath + "/quatratic.txt", pack.interval);
 		}
 		return result;
@@ -587,7 +595,7 @@ public class Fund {
 				+ conclusion + ",";
 	}
 
-	public String extractindex(boolean online, int order, int paint, int extrapolations) {
+	public String extractindex(boolean online, double order, int paint, int extrapolations) {
 		outString = "";
 		pack result = new pack();
 		result = onLineDemandInvast(1, online, order, paint, extrapolations);
@@ -600,8 +608,9 @@ public class Fund {
 			conclusion = reliability * Erate / (1 + fee);
 		} else {
 			conclusion = - reliability * Erate / (1 + fee);
+			Erate = -result.val;
 		}
-		Erate = reliability * Erate / (1 + fee) + 1;
+		Erate += 1; //reliability * Erate / (1 + fee) + 1;
 		// 计策修改时关注这里，第7个值（[6]，这里是conclusion）是真正参与测评的。增持与减持列表同使用该值。该值貌似始终需要大于零（sortLevelIndex）。区别在于是否小于1，这涉及到分值叉录入、减持计算等等；TODO
 		outString = printFund();
 		return outString;

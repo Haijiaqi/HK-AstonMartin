@@ -42,19 +42,28 @@ public class main {
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		String thispath = Framework.basepath + "/fund/bitcoin/D7points.txt";
-		for (int i = 0; i < 600; i++) {
-			ArrayList<pack> outpoints = verify.loadpoints(thispath, 0 + i, 240 + i);
+		for (int i = 10; i < 600; i++) {
+			String[] infomation = {"BTC" + i, "BTC" + i};
+			ArrayList<pack> outpoints = verify.loadpoints(thispath, 0 + i, 240 + i, -1);
 			// Investment.balanceDir = balanceDir;
 			// 没加载到点就下一项
 			if (outpoints.size() <= pack.maxorder * 5) {
 			} else {
-				int paint = 5000;
+				int paint = 0;//5000;
 				if (paint > 0) {
 					verify.saveparam(Framework.basepath + "/pythonparam.txt", thispath + ";" + "rawinfo[0]");					
 				}
 				// 计策修改时关注这里以下，确保能够被分配到对应的风险级中
 				// 原始数据给予解析
-				Fund aFund = new Fund(outpoints, 2, paint, 6);
+				Fund aFund = new Fund(infomation, outpoints, 2, paint, 12);
+				verify.saveparam(Framework.basepath + "/processInfo.txt", "");
+				verify.appenddata(Framework.basepath + "/processInfo.txt"
+						// replacepath(
+						// replacepath(indexPath, "date", gettodate()),
+						// "all", String.valueOf(aFund.risklevel))
+						, aFund.outString + "\n");
+				Framework.produceTradeItem();
+				Framework.execute(outpoints.get(outpoints.size() - 1).val + "");
 			}
 		}
 	}
@@ -68,7 +77,7 @@ public class main {
 		double tnum = 0;
 		for (int num = 250; num <= 250; num += 1) {
 			ArrayList<pack> points = verify.loadpoints(
-				fundPath, 0, num);
+				fundPath, 0, num, -1);
 			String[] c = {"010592","南方医药创新股票A","NFYYCXGPA","1627401600.0","0.9277","0.9277","4.56","-9.24","-10.95","-7.35","","","","","","-7.23","1614614400.0","","0.15%"
 			};
 			// Fund aFund = new Fund(c, points);		

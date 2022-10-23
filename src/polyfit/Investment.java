@@ -20,7 +20,7 @@ public class Investment {
 	double cash = 0;
 	int flag = 0;
 	// static String balanceDir = "D:/a/temp/balance/";
-	static double amount = 450;
+	static double amount = 20000;
 
 	String infoString = "";
 
@@ -83,14 +83,14 @@ public class Investment {
 		return aInvestment;
 	}
 
-	public static void trade(Investment trade, String info1, String info2) {
+	public static void trade(Investment trade, String info1, String info2, int type) {
 		double number = Double.valueOf(trade.cost);
 		if (number > 0) {
 			info2 = info2.substring(0, info2.indexOf("%"));
 			buy(trade.fund, number, Double.valueOf(info1),
-					Double.valueOf(info2) / 100);
+					Double.valueOf(info2) / 100, type);
 		} else if (number < 0) {
-			sell(trade.fund, number, Double.valueOf(info1));
+			sell(trade.fund, number, Double.valueOf(info1), type);
 		}
 	}
 
@@ -101,7 +101,7 @@ public class Investment {
 		return result;
 	}
 
-	public static void sell(String aim, double share, double newNAV) {
+	public static void sell(String aim, double share, double newNAV, int type) {
 		ArrayList<Investment> investments = loads(aim);
 		Investment thisInvestment = null;
 		share *= -1;
@@ -111,26 +111,26 @@ public class Investment {
 					.sellsome(
 							share,
 							newNAV,
-							outrates((Framework.getTodayTimestamp() - thisInvestment.timestamp) / 86400000));
+							type == 1 ? outrates((Framework.getTodayTimestamp() - thisInvestment.timestamp) / 86400000) : 0.008);
 		}
 		rewrites(aim, investments);
 	}
 
 	public static void buy(String aim, double cost, double newNAV,
-			double inrates) {
+			double inrates, int type) {
 		ArrayList<Investment> investments = loads(aim);
 		Investment thisInvestment = null;
 		boolean alreadyhas = false;
 		for (int i = 0; i < investments.size(); i++) {
 			thisInvestment = investments.get(i);
-			if (thisInvestment.timestamp == Framework.getTodayTimestamp()) {
+			if (thisInvestment.timestamp == (type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp())) {
 				thisInvestment.buysome(cost, newNAV, inrates);
 				alreadyhas = true;
 			}
 		}
 		if (!alreadyhas) {
 			Investment aInvestment = new Investment(0,
-					Framework.getTodayTimestamp(), aim, cost, newNAV, inrates);
+			(type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp()), aim, cost, newNAV, inrates);
 			investments.add(aInvestment);
 		}
 		rewrites(aim, investments);

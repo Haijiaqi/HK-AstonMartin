@@ -132,7 +132,7 @@ public class Framework {
 						break;
 					}
 				}
-				ArrayList<pack> outpoints = verify.loadpoints(thispath, 0, 1000);
+				ArrayList<pack> outpoints = verify.loadpoints(thispath, 0, 1000, -1);
 				// Investment.balanceDir = balanceDir;
 				// 没加载到点就下一项
 				if (outpoints.size() <= pack.maxorder * 5) {
@@ -245,7 +245,7 @@ public class Framework {
 	
 	public static void stockMarket() {
 		String thispath = getPath("today", "fund", "000000");
-		ArrayList<pack> outpoints = verify.loadpoints(thispath, 0, 1000);
+		ArrayList<pack> outpoints = verify.loadpoints(thispath, 0, 1000, -1);
 		String[] rawinfo = {"000000", "上证指数", "0", "0", "0"};
 		Fund aFund = new Fund(rawinfo, outpoints, 1, 0);
 		double coefficient = aFund.Erate > 1 ? aFund.Erate : 1;
@@ -339,7 +339,7 @@ public class Framework {
 																		// rawinfo[0]
 																		// +
 																		// ".txt"
-						, 0, 1000);
+						, 0, 1000, -1);
 				// Investment.balanceDir = balanceDir;
 				// 没加载到点就下一项
 				if (outpoints.size() <= 0) {
@@ -437,6 +437,58 @@ public class Framework {
 			verify.appenddata(getPath("today", "trade", "tradelist")
 			// replacepath(tradeListPath, "date", gettodate())
 					, finaldata.get(i).printtodolist(i + 1) + "\n");
+		}
+	}
+
+	public static void produceTradeItem(/* String indexDir, String tradeListPath */) {
+		ArrayList<Investment> data = new ArrayList<Investment>();
+		ArrayList<Investment> tempfinaldata = new ArrayList<Investment>();
+		ArrayList<Investment> finaldata = new ArrayList<Investment>();
+		int maxValueIndex = 0;
+		double maxValue = 0;
+		BufferedReader bri;
+		ArrayList<Investment> datas = new ArrayList<Investment>();
+		// ArrayList<String[]> data = new ArrayList<String[]>();
+		String[] aindex;
+		Investment aInvestment;
+		String path = Framework.basepath + "/processInfo.txt";
+		try {
+			if (new File(path).exists()) {
+				bri = new BufferedReader(new InputStreamReader(
+						new FileInputStream(new File(path).getAbsolutePath()),
+						"GB2312"));
+				String iline = null;
+				for (int k = 0; (iline = bri.readLine()) != null; k++) {
+					aindex = iline.split(",");
+					aInvestment = new Investment();
+					aInvestment.infoString = iline;
+					// aInvestment.fund = aindex[0] + "," + aindex[1];
+					aInvestment.fund = Framework.getInfoFromJson(iline, "code", ":") + "," + Framework.getInfoFromJson(iline, "name", ":");
+					// aInvestment.share = Double.valueOf(safeget(aindex, 2));
+					aInvestment.share = Double.valueOf(Framework.getInfoFromJson(iline, "totalshare", ":"));
+					// aInvestment.inrates = Double.valueOf(safeget(aindex, 6));
+					aInvestment.inrates = Double.valueOf(Framework.getInfoFromJson(iline, "Erate", ":")) - 1;
+					// data.add(aindex);
+					if (aInvestment.inrates < 0) {
+					// 导出的风险指数小于1且总额大于1
+						aInvestment.cost = aInvestment.share * aInvestment.inrates;
+					} else if (aInvestment.inrates > 0) {
+						aInvestment.cost = Investment.amount * aInvestment.inrates;
+						aInvestment.cost = verify.cutDouble(aInvestment.cost, 2);
+					}
+					verify.saveparam(basepath + "/tradeList.txt", "");
+					verify.appenddata(basepath + "/tradeList.txt"
+					// replacepath(tradeListPath, "date", gettodate())
+							, aInvestment.printtodolist(0) + "\n");
+				}
+				bri.close();
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			e.printStackTrace();
+			e.printStackTrace(new PrintStream(baos));
+			log(baos.toString());
 		}
 	}
 
@@ -601,10 +653,37 @@ public class Framework {
 					ArrayList<Investment> trades = getfundtrade(meta[0]);
 					for (int j = 0; j < trades.size(); j++) {
 						Investment.trade(trades.get(j), meta[4],
-								meta[listinfolength - 1]);
+								meta[listinfolength - 1], 1);
 					}
 				}
 				br.close();
+			} catch (Exception e) {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				e.printStackTrace();
+				e.printStackTrace(new PrintStream(baos));
+				log(baos.toString());
+			}
+		}
+	}
+	public static void execute(String price) {
+		String tradepath = basepath + "/tradeList.txt";
+		tradeList.clear();
+		if (!"".equals(tradepath)) {
+			try {
+				BufferedReader bt = new BufferedReader(
+						new FileReader(tradepath));
+				String line = null;
+				Investment item;
+				for (int i = 0; (line = bt.readLine()) != null; i++) {
+					item = new Investment(line);
+					tradeList.add(item);
+				}
+				bt.close();
+				ArrayList<Investment> trades = getfundtrade("BTC");
+				for (int j = 0; j < trades.size(); j++) {
+					Investment.trade(trades.get(j), price,
+							"0.8%", 0);
+				}
 			} catch (Exception e) {
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				e.printStackTrace();
@@ -1109,7 +1188,7 @@ public class Framework {
 			String indexDir, ArrayList<String[]> stock) {
 		String fundIndex = "";
 		ArrayList<pack> outpoints = verify.loadpoints(fundDir + balance[1]
-				+ ".txt", 0, 1000);
+				+ ".txt", 0, 1000, -1);
 		for (int i = 0; i < outpoints.size(); i++) {
 			if (Integer.valueOf(safeget(balance, 0)) == outpoints.get(i).id) {
 				fundIndex += outpoints.get(i).getY() + ",";

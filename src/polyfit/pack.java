@@ -55,10 +55,47 @@ public class pack {
 		return this;
 	}
 
-	public pack minus(pack otherPack, int divide) {
+	public pack minus(pack otherPack, int divide, int type) {
 		this.x -= otherPack.getX();
 		this.x = this.getX() / divide;
-		this.y -= otherPack.getY();
+		if (type == 0) {
+			this.y -= otherPack.getY();
+		} else if (type == -1) {
+			this.y -= otherPack.getY();
+		} else if (type == -2) {
+			this.y -= otherPack.getY();
+			this.y = Math.signum(this.y) * Math.sqrt(Math.abs(this.y));
+		} else if (type == 2) {
+			this.y = Math.signum(this.y) * Math.sqrt(Math.abs(this.y));
+		} else if (type == -3) {
+			this.y -= otherPack.getY();
+			if (this.y == 0) {
+				this.y = 1;
+			}
+			this.y = Math.signum(this.y) * Math.log(Math.abs(this.y));
+		} else if (type == 3) {
+			if (this.y == 0) {
+				this.y = 1;
+			}
+			this.y = Math.signum(this.y) * Math.log(Math.abs(this.y));
+		} else if (type == -10) {
+			this.y -= otherPack.getY();
+			if (this.y == 0) {
+				this.y = 1;
+			}
+			this.y = Math.signum(this.y) * (Math.log(Math.abs(this.y)) / (Math.log(10)));
+		} else if (type == 10) {
+			if (this.y == 0) {
+				this.y = 1;
+			}
+			this.y = Math.signum(this.y) * (Math.log(Math.abs(this.y)) / (Math.log(10)));
+		} else if (type > 1000) {
+			this.y -= otherPack.getY();
+			if (this.y == 0) {
+				this.y = 1;
+			}
+			this.y = Math.signum(this.y) * (Math.log(Math.abs(this.y)) / (Math.log(type / 1000.0)));
+		}
 		return this;
 	}
 
