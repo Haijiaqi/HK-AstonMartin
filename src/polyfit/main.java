@@ -44,7 +44,7 @@ public class main {
 		String thispath = Framework.basepath + "/fund/bitcoin/D7points.txt";
 		String path = Framework.getPath("balance", "balance", "BTC");
 		verify.saveparam(path, "");
-		for (int i = 0; i < 500; i++) {
+		for (int i = 0; i < 458; i++) {
 			String[] infomation = {"BTC", "BTC" + i};
 			ArrayList<pack> outpoints = verify.loadpoints(thispath, 0 + i, 240 + i, -1);
 			// Investment.balanceDir = balanceDir;

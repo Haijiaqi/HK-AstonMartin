@@ -392,14 +392,14 @@ public class Fund {
 				verify.appenddata(Framework.basepath + "/weightup.txt",
 				String.valueOf(x + 0 * pack.interval) + ","
 				+ String.valueOf(result.value * 1000 + points.get(points.size() - 1).getY()) + "\n");
-				verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(Math.round(result.r * 1000000) / 1000000.0));
+				verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(verify.cutDouble(result.r, 4)));
 			}
 			if (result.value < 0) {
 				if (result.val > -1) {
 					verify.appenddata(Framework.basepath + "/weightdn.txt",
 					String.valueOf(x + 0 * pack.interval) + ","
 					+ String.valueOf(result.val * 100 + points.get(points.size() - 1).getY()) + "\n");
-					verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(Math.round(result.val * 1000000) / 1000000.0));
+					verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(verify.cutDouble(result.val, 4)));
 				}
 			}
 			quadratic.paintCurve(Framework.basepath + "/quatratic.txt", pack.interval);

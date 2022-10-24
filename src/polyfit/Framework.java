@@ -473,12 +473,13 @@ public class Framework {
 					if (aInvestment.inrates < 0) {
 					// 导出的风险指数小于1且总额大于1
 						if (aInvestment.inrates > -1) {
-							aInvestment.cost = aInvestment.stockshare * aInvestment.inrates * -1;
+							/*aInvestment.cost = aInvestment.stockshare * aInvestment.inrates * -1;
 							aInvestment.cost = aInvestment.cost - (aInvestment.stockshare - aInvestment.share);
 							if (aInvestment.cost < 0) {
 								aInvestment.cost = 0.000000001;
 							}
-							aInvestment.cost *= -1;
+							aInvestment.cost *= -1;*/
+							aInvestment.cost = aInvestment.inrates;
 						}
 					} else if (aInvestment.inrates > 0) {
 						if (aInvestment.inrates > 0.99) {

@@ -8,6 +8,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import formula.number;
+
 public class Investment {
 	int id = 0;
 	long timestamp = 0;
@@ -69,6 +71,14 @@ public class Investment {
 	public double getbalancebyNAV(double newNAV) {
 		return balance = share * newNAV;
 	}
+	public double sellSharebyRate(double rate) {
+		double sellShare = stockshare * rate;
+		sellShare = sellShare - (stockshare - share);
+		if (sellShare < 0) {
+			sellShare = 0;
+		}
+		return sellShare;
+	}
 
 	public double getbalancebyrate(double rate) {
 		balance *= rate;
@@ -110,19 +120,30 @@ public class Investment {
 		if (share != 0.000000001) {			
 			double preCost = gettotalcost(investments);
 			double preCash = gettotalcash(investments);
-			for (int i = 0; share > 0 && i < investments.size(); i++) {
-				thisInvestment = investments.get(i);
-				share = thisInvestment
-						.sellsome(
-								share,
-								newNAV,
-								type == 1 ? outrates((Framework.getTodayTimestamp() - thisInvestment.timestamp) / 86400000) : 0.001);
+			if (type == 1) {
+				for (int i = 0; share > 0 && i < investments.size(); i++) {
+					thisInvestment = investments.get(i);
+					share = thisInvestment
+							.sellsome(
+									share,
+									newNAV,
+									type == 1 ? outrates((Framework.getTodayTimestamp() - thisInvestment.timestamp) / 86400000) : 0.001);
+				}
+			} else if (type == 0){
+				for (int i = 0; i < investments.size(); i++) {
+					thisInvestment = investments.get(i);
+					thisInvestment
+							.sellsome(
+									thisInvestment.sellSharebyRate(share),
+									newNAV,
+									type == 1 ? outrates((Framework.getTodayTimestamp() - thisInvestment.timestamp) / 86400000) : 0.001);
+				}
 			}
 			double nowCost = gettotalcost(investments);
 			double nowCash = gettotalcash(investments);
 			double deltaCost = preCost - nowCost;
 			double deltaCash = nowCash - preCash;
-			if (deltaCash / deltaCost > 1.001) {
+			if (deltaCash / deltaCost > 1.01) {
 				for (int i = 0; i < investments.size(); i++) {
 					investments.get(i).balance = investments.get(i).share * newNAV;
 				}
