@@ -139,7 +139,7 @@ public class Framework {
 					continue;
 				}
 				if (paint > 0) {
-					verify.saveparam(basepath + "/pythonparam.txt", thispath + ";" + rawinfo[0]);					
+					verify.saveparam(basepath + "/pythonparam.txt", thispath + ";");					
 				}
 				// 计策修改时关注这里以下，确保能够被分配到对应的风险级中
 				// 原始数据给予解析

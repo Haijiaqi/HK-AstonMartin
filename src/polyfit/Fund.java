@@ -180,7 +180,7 @@ public class Fund {
 		keypoints = mergesort(extreme, inflection);
 		// double[] startp = { polynomial_all.start };
 		// keypoints = mergesort(startp, keypoints);
-		double halflocalinter = Escale(keypoints, 0) / pack.interval;
+		double halflocalinter = Escale(keypoints, 1) / pack.interval;
 		double localinter = halflocalinter * 2;
 
 		tailstartcubic = findTailStart(keypoints, polynomial_all, (int)localinter); // 17);
@@ -385,16 +385,31 @@ public class Fund {
 			result.r = maxInthree(result.x, result.value, result.y, true);
 			result.val = weight.getY();
 		}
+		double delta = quadraticpoints.get(quadraticpoints.size() - 1).getY() -  quadratic.f(quadratic.end, 0);
+		double base = quadraticpoints.get(quadraticpoints.size() - 1).val - delta;
+		double updnRate = (delta / base ) * 50;
+		if (result.r > 0) {
+			result.r = (result.r * (1 - updnRate));
+		} else if (result.r < 0) {
+			if (result.val <= -1) {
+				
+			} else {
+				result.val = (result.val * (1 + updnRate));
+				if (result.val <= -1) {
+					result.val = -0.999999999999999999999999999999;
+				}				
+			}
+		}
 		if (paint > 0) {
 			verify.saveparam(Framework.basepath + "/weightup.txt", "");
 			verify.saveparam(Framework.basepath + "/weightdn.txt", "");
-			if (result.value > 0) {
+			if (result.r > 0) {
 				verify.appenddata(Framework.basepath + "/weightup.txt",
 				String.valueOf(x + 0 * pack.interval) + ","
-				+ String.valueOf(result.value * 1000 + points.get(points.size() - 1).getY()) + "\n");
+				+ String.valueOf(result.r * 1000 + points.get(points.size() - 1).getY()) + "\n");
 				verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(verify.cutDouble(result.r, 4)));
 			}
-			if (result.value < 0) {
+			if (result.r < 0) {
 				if (result.val > -1) {
 					verify.appenddata(Framework.basepath + "/weightdn.txt",
 					String.valueOf(x + 0 * pack.interval) + ","
@@ -441,9 +456,9 @@ public class Fund {
 				// }
 				int midIndex = interval.length / 2;
 				if (midIndex * 2 == interval.length) {
-					return (interval[midIndex + 1] + interval[midIndex]) / 2;
+					return (interval[midIndex - 1] + interval[midIndex]) / 2;
 				} else {
-					return interval[midIndex + 1];
+					return interval[midIndex];
 				}
 			}
 		} else {
@@ -701,7 +716,7 @@ public class Fund {
 			// 如果判升
 			if (lasttoprate > standard) {
 				// 高于低水位，补段除以水位线补段
-				return (1 - lasttoprate);
+				return (1 - lasttoprate) * (1-standard) * 0.5;
 			} else {
 				// 低于低水位，置信升率为1
 				return 1; // (standard - lasttoprate) / (standard);
@@ -710,7 +725,7 @@ public class Fund {
 			// 如果判降
 			if (lasttoprate < (1 - standard)) {
 				// 低于低水位的对称线，本段除以低水位补长度
-				return lasttoprate; // (lasttoprate - standard)
+				return lasttoprate * (1-standard) * 0.5; // (lasttoprate - standard)
 														// / (1 - standard);
 			} else {
 				// 高于低水位的对称线，置信降率为1

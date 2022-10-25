@@ -241,16 +241,16 @@ public class Polynomial {
 		try {
 			Integer inint = (int) Math.round(in);
 			probability = 0;
-			for (int key : probabilitydensityfunction.keySet()) {
+			/*for (int key : probabilitydensityfunction.keySet()) {
 				if (inint >= key) {// 比百分之多少大
 					probability += probabilitydensityfunction.get(key);
 				} else {
 					break;
 				}
+			}*/
+			if (in > min) {
+				probability = (in - min) / (max - min);
 			}
-			// if (in > min) {
-			// probability = (in - min) / (max - min);
-			// }
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -823,7 +823,7 @@ public class Polynomial {
 				x = start + needinter;
 			}
 			double zero = rawdata.get(0).getX();
-			double ready = (function1.f(x, 0) - function1.f(zero, 0))/ (Math.abs(integral) / 1.33333333);
+			double ready = (function1.f(x, 0) - function1.f(zero, 0))/ (Math.abs(integral) / 1.33333333333);
 			ready = Math.abs(ready) > 1 ? Math.signum(ready) : ready;
 			double weight = total * (function1.f(x, 0) - function1.f(start, 0))/ Math.abs(integral);
 			result.setX(weight);

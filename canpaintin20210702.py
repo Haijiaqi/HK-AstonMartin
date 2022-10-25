@@ -80,7 +80,7 @@ def main():
     '''a=np.polyfit(x[-recentnum:-1],y[-recentnum:-1],risklevel)#用2次多项式拟合x，y数组
     b=np.poly1d(a)#拟合完之后用这个函数来生成多项式对象
     c=b(x[-recentnum:-1])#生成多项式对象之后，就是获取x在这个多项式处的值'''
-    plt.figure(figsize=(10, 5))#, top=0, right=1)
+    plt.figure(figsize=(6, 3))#, top=0, right=1)
     #plt.scatter(x,y,marker='.',label='raw')#对原始数据画散点图
     plt.plot(x,y,color="black")
     plt.scatter(fitx,fity,marker='.',label=tab)#对近期拟合画散点图

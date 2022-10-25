@@ -24,7 +24,7 @@ public class pack {
 
 	static double totalInterval = 3.65;
 
-	static double discountRate = 0.66;
+	static double discountRate = 0.66666666666;
 
 	static double[] stagesweight = { 0.05, 0.9, 0.05 };
 
