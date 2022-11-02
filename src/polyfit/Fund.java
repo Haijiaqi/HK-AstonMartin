@@ -180,8 +180,9 @@ public class Fund {
 		keypoints = mergesort(extreme, inflection);
 		// double[] startp = { polynomial_all.start };
 		// keypoints = mergesort(startp, keypoints);
-		double halflocalinter = Escale(keypoints, 1) / pack.interval;
-		double localinter = halflocalinter * 2;
+		double halflocalinterreal = Escale(keypoints, 1) / pack.interval;
+		int halflocalinter = (int)Math.round(halflocalinterreal);
+		double localinter = (int)Math.round(halflocalinterreal * 2);
 
 		tailstartcubic = findTailStart(keypoints, polynomial_all, (int)localinter); // 17);
 		cubicpoints = polynomial_all.pickdata(tailstartcubic);

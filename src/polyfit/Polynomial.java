@@ -357,7 +357,7 @@ public class Polynomial {
 				if (order == 2) {
 					imum = getimum(this.x.size() - 1);
 				} else {
-					System.err.println("需要拟合" + order);
+					//System.err.println("需要拟合" + order);
 				}
 			} else {
 				System.err.println("需要拟合" + order + "次函数，但你只给了" + points.size()
@@ -396,7 +396,7 @@ public class Polynomial {
 				if (order == 2) {
 					imum = getimum(this.x.size() - 1);
 				} else {
-					System.err.println("需要拟合" + order);
+					//System.err.println("需要拟合" + order);
 				}
 				if (extrapolations > 0) {
 					rawdata = points;
@@ -730,13 +730,28 @@ public class Polynomial {
 			pack rawimum = getimum(xIndex);
 			pack imum = getimum(xIndex);
 			// 要使左短右长、只有右的线提前结束，从而留下有积分意义的线
+			boolean re = false;
 			if (this.x.get(xIndex).get(0, 0) * (rightY - leftY) >= 0) {
-				result.setX(0);
+				/*result.setX(0);
 				result.setY(0);
-				return result;
+				return result;*/
+				re = true;
+			} else {
+				if (imum.y == 0) {
+					System.out.println('i');
+				}
 			}
+			double zero = rawdata.get(0).getX();
 			// 获取左端点
-			pack known = new pack(rawdata.get(0).getX(), leftY);
+			pack known;
+			if (re) {
+				zero = x;
+				x = rawdata.get(0).getX();
+				start = x - (start - zero);
+				known = new pack(rawdata.get(rawdata.size() - 1).getX(), rightY);
+			} else {
+				known = new pack(rawdata.get(0).getX(), leftY);
+			}
 			// 获取左右高，开口朝上为正，开口朝下为负
 			double height = known.getY() - imum.getY();
 			// 获取左右距离，有左为正，无左为负
@@ -807,6 +822,7 @@ public class Polynomial {
 			Polynomial function1 = function0.s(1);
 			//function0.display(5000);
 			//function1.display(5000);
+			//this.display(5000);
 			// 对积分函数求拟合域（拟合原函数所用的点的区域）上的总积分值
 			double integral = function1.f(function1.end, 0)
 					- function1.f(function1.start, 0);
@@ -816,13 +832,12 @@ public class Polynomial {
 			double rate = 0;
 			double needinter = 0;
 			if (radix != 0) {
-				realhalf = rawimum.getX() - rawdata.get(0).getX();
+				realhalf = Math.abs(width);
 				rate = realhalf / (radix / 2);
 				realinter = x - start;
 				needinter = rate * realinter;
 				x = start + needinter;
 			}
-			double zero = rawdata.get(0).getX();
 			double ready = (function1.f(x, 0) - function1.f(zero, 0))/ (Math.abs(integral) / 1.33333333333);
 			ready = Math.abs(ready) > 1 ? Math.signum(ready) : ready;
 			double weight = total * (function1.f(x, 0) - function1.f(start, 0))/ Math.abs(integral);
@@ -1010,7 +1025,7 @@ public class Polynomial {
 				&& x.get(xIndex).get(0, 0) != 0) {
 			point.setX(-1 * x.get(xIndex).get(1, 0) / 2
 					/ x.get(xIndex).get(0, 0));
-			point.setY(f(point.getX(), 0));
+			point.setY(f(x.get(xIndex).getArray(), point.getX()));
 		}
 		return point;
 	}

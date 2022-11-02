@@ -24,6 +24,7 @@ public class Investment {
 	int flag = 0;
 	// static String balanceDir = "D:/a/temp/balance/";
 	static double amount = 20000;
+	static double money = 0;
 
 	String infoString = "";
 
@@ -147,6 +148,11 @@ public class Investment {
 				for (int i = 0; i < investments.size(); i++) {
 					investments.get(i).balance = investments.get(i).share * newNAV;
 				}
+				Investment.money += deltaCash;
+				double marketprice = gettotalmarketprice(investments, newNAV);
+				double profit = Investment.money + marketprice * 0.999;
+				Investment.amount = 20000 + (profit > 0 ? profit : 0);
+				System.out.println(Investment.money + " + " + marketprice + " = " + profit + " price " + newNAV + " amount " + Investment.amount);
 				rewrites(aim, investments);
 			}
 		}
@@ -170,6 +176,11 @@ public class Investment {
 				(type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp()), aim, cost, newNAV, inrates);
 				if (cost / Investment.amount > 0.001) {
 					investments.add(aInvestment);
+					Investment.money -= cost;
+					double marketprice = gettotalmarketprice(investments, newNAV);
+					double profit = Investment.money + marketprice * 0.999;
+					Investment.amount = 20000 + (profit > 0 ? profit : 0);
+					System.out.println(Investment.money + " + " + marketprice + " = " + profit + " price " + newNAV + " amount " + Investment.amount);
 				}
 			}
 		}
@@ -177,7 +188,6 @@ public class Investment {
 			investments.get(i).stockshare = investments.get(i).share;
 			investments.get(i).balance = investments.get(i).share * newNAV;
 		}
-		System.out.println("refresh !!!" + newNAV);
 		rewrites(aim, investments);
 	}
 
@@ -243,7 +253,14 @@ public class Investment {
 	public static double gettotalcost(ArrayList<Investment> investments) {
 		double result = 0;
 		for (int i = 0; i < investments.size(); i++) {
-			result += investments.get(i).share * investments.get(i).NAV;
+			result += investments.get(i).share * investments.get(i).NAV * (1 + investments.get(i).inrates);
+		}
+		return result;
+	}
+	public static double gettotalmarketprice(ArrayList<Investment> investments, double newNAV) {
+		double result = 0;
+		for (int i = 0; i < investments.size(); i++) {
+			result += investments.get(i).share * newNAV;
 		}
 		return result;
 	}
