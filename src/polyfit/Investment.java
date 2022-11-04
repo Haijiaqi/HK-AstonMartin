@@ -110,7 +110,7 @@ public class Investment {
 	public String print() {
 		String result = "";
 		result += id + "," + timestamp + "," + fund + "," + cost + "," + NAV
-				+ "," + inrates + "," + stockshare + "," + share + "," + balance + "," + cash;
+				+ "," + inrates + "," + stockshare + "," + (share < 0.00000001 ? 0 : share) + "," + balance + "," + cash;
 		return result;
 	}
 
@@ -151,7 +151,8 @@ public class Investment {
 				Investment.money += deltaCash;
 				double marketprice = gettotalmarketprice(investments, newNAV);
 				double profit = Investment.money + marketprice * 0.999;
-				Investment.amount = 20000 + (profit > 0 ? profit : 0);
+				double nowAmount =  20000 + (profit > 0 ? profit / 40 : 0);
+				Investment.amount = Investment.amount > nowAmount ? Investment.amount : nowAmount;
 				System.out.println(Investment.money + " + " + marketprice + " = " + profit + " price " + newNAV + " amount " + Investment.amount);
 				rewrites(aim, investments);
 			}
@@ -179,7 +180,8 @@ public class Investment {
 					Investment.money -= cost;
 					double marketprice = gettotalmarketprice(investments, newNAV);
 					double profit = Investment.money + marketprice * 0.999;
-					Investment.amount = 20000 + (profit > 0 ? profit : 0);
+					double nowAmount =  20000 + (profit > 0 ? profit / 40 : 0);
+					Investment.amount = Investment.amount > nowAmount ? Investment.amount : nowAmount;
 					System.out.println(Investment.money + " + " + marketprice + " = " + profit + " price " + newNAV + " amount " + Investment.amount);
 				}
 			}

@@ -41,18 +41,31 @@ public class main {
 
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
-		String thispath = Framework.basepath + "/fund/bitcoin/D7points.txt";
+		String thispath = Framework.basepath + "/fund/bitcoin/okex15.txt";
 		String path = Framework.getPath("balance", "balance", "BTC");
 		verify.saveparam(path, "");
-		for (int i = 0; i < 458 + 120; i++) {
-			String[] infomation = {"BTC", "BTC" + i};
+		ArrayList<pack> evalpoints = new ArrayList<>();
+		pack pack1 = new pack(17000, 2);
+		evalpoints.add(pack1);
+		pack pack2 = new pack(20000, 1);
+		evalpoints.add(pack2);
+		//pack pack3 = new pack(21000, 1);
+		//evalpoints.add(pack3);
+		pack pack4 = new pack(26000, 0);
+		evalpoints.add(pack4);
+		Polynomial p = new Polynomial();
+		p.processLS(evalpoints, 2);
+		p.display(5000);
+		for (int i = 0; i < 13050; i++) {
+			String[] infomation = {"BTC", "" +  i};
 			ArrayList<pack> outpoints = verify.loadpoints(thispath, 0 + i, 120 + i, -1);
+			double recommand = p.f(outpoints.get(outpoints.size() - 1).val, 0);
 			// Investment.balanceDir = balanceDir;
 			// 没加载到点就下一项
 			if (outpoints.size() <= pack.maxorder * 5) {
 			} else {
-				int paint = 0;//5000;//
-				if (i < 458) {
+				int paint = 0;//4500;//
+				if (i < 0) {
 					paint = 0;
 				}
 				if (paint > 0) {
@@ -60,7 +73,7 @@ public class main {
 				}
 				// 计策修改时关注这里以下，确保能够被分配到对应的风险级中
 				// 原始数据给予解析
-				Fund aFund = new Fund(infomation, outpoints, 1, paint, 12);
+				Fund aFund = new Fund(infomation, outpoints, 2, paint, 6, recommand);
 				verify.saveparam(Framework.basepath + "/processInfo.txt", "");
 				verify.appenddata(Framework.basepath + "/processInfo.txt"
 						// replacepath(

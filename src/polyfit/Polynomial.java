@@ -838,7 +838,7 @@ public class Polynomial {
 				needinter = rate * realinter;
 				x = start + needinter;
 			}
-			double ready = (function1.f(x, 0) - function1.f(zero, 0))/ (Math.abs(integral) / 1.33333333333);
+			double ready = (function1.f(x, 0) - function1.f(zero, 0))/ (Math.abs(integral) / 1.666667);
 			ready = Math.abs(ready) > 1 ? Math.signum(ready) : ready;
 			double weight = total * (function1.f(x, 0) - function1.f(start, 0))/ Math.abs(integral);
 			result.setX(weight);
@@ -1145,7 +1145,7 @@ public class Polynomial {
 	public int display(int paint) {
 		if (paint > 0) {
 			try {
-				paintCurve(Framework.basepath + "/function.txt", pack.interval);
+				paintCurve(Framework.basepath + "/function.txt", (end - start) / 50);//pack.interval * 50);
 				String command = "python3 " + Framework.basepath + "/fastpaint.py";
 				System.out.println(command);
 				Process pr = Runtime.getRuntime().exec(command);

@@ -86,10 +86,11 @@ public class Fund {
 			}
 		}
 	}
-	public Fund(String[] information, ArrayList<pack> points, double order, int paint, int extrapolations) {
+	public Fund(String[] information, ArrayList<pack> points, double order, int paint, int extrapolations, double recommand) {
 		this.information = information;
 		code = Framework.safeget(information, 0);
 		name = Framework.safeget(information, 1);
+		this.immediaterisk = recommand;
 		this.points = points;
 		macroscopic(paint, extrapolations);
 		microcosmic(order, paint, extrapolations);
@@ -386,11 +387,14 @@ public class Fund {
 			result.r = maxInthree(result.x, result.value, result.y, true);
 			result.val = weight.getY();
 		}
-		double delta = quadraticpoints.get(quadraticpoints.size() - 1).getY() -  quadratic.f(quadratic.end, 0);
+		double delta = quadraticpoints.get(quadraticpoints.size() - 1).getY() - quadratic.f(quadratic.end, 0);
 		double base = quadraticpoints.get(quadraticpoints.size() - 1).val - delta;
-		double updnRate = (delta / base ) * 50;
+		double updnRate = (delta / base ) * 10;
 		if (result.r > 0) {
 			result.r = (result.r * (1 - updnRate));
+			if (result.r <= 0) {
+				result.r = 0.000000000000001;
+			}				
 		} else if (result.r < 0) {
 			if (result.val <= -1) {
 				
@@ -408,14 +412,14 @@ public class Fund {
 				verify.appenddata(Framework.basepath + "/weightup.txt",
 				String.valueOf(x + 0 * pack.interval) + ","
 				+ String.valueOf(result.r * 1000 + points.get(points.size() - 1).getY()) + "\n");
-				verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(verify.cutDouble(result.r, 4)));
+				//verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(verify.cutDouble(result.r, 4)));
 			}
 			if (result.r < 0) {
 				if (result.val > -1) {
 					verify.appenddata(Framework.basepath + "/weightdn.txt",
 					String.valueOf(x + 0 * pack.interval) + ","
 					+ String.valueOf(result.val * 100 + points.get(points.size() - 1).getY()) + "\n");
-					verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(verify.cutDouble(result.val, 4)));
+					//verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(verify.cutDouble(result.val, 4)));
 				}
 			}
 			quadratic.paintCurve(Framework.basepath + "/quatratic.txt", pack.interval);
@@ -626,12 +630,15 @@ public class Fund {
 		reliability = reliability(Erate + 1);
 		// double conclusion = 0.925 * reliability + 0.075 * Erate;
 		if (Erate >= 0) {
+			Erate *= immediaterisk;
 			conclusion = reliability * Erate / (1 + fee);
 		} else {
 			Erate = result.val;
+			Erate *= -(immediaterisk - 2) / 2;
 			conclusion = reliability * Erate / (1 + fee);
 		}
-		Erate *= getdiscount(Erate, lastpointtoprate, pack.discountRate);
+		Erate *= Erate == -1 ? 1 : getdiscount(Erate, lastpointtoprate, pack.discountRate);
+		verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(verify.cutDouble(Erate, 4)));
 		Erate += 1; //reliability * Erate / (1 + fee) + 1;
 		// 计策修改时关注这里，第7个值（[6]，这里是conclusion）是真正参与测评的。增持与减持列表同使用该值。该值貌似始终需要大于零（sortLevelIndex）。区别在于是否小于1，这涉及到分值叉录入、减持计算等等；TODO
 		outString = printFund();
@@ -643,7 +650,7 @@ public class Fund {
 
 	public String printFund() {
 		return outString = Framework.getFieldPart("code", code)
-		+ Framework.getFieldPart("name", name + rateString)
+		+ Framework.getFieldPart("name", name)
 		+ Framework.getFieldPart("totalshare", totalshare)
 		+ Framework.getFieldPart("realshare", realshare)
 		+ Framework.getFieldPart("Erate", Erate)
@@ -663,7 +670,7 @@ public class Fund {
 		// 可信度。涨有可信度，跌也有可信度
 		double result = 1;
 		// 信多跌不信多涨
-		double risk = getimmediaterisk();
+		//double risk = getimmediaterisk();
 		// 信号量，涨大于1，跌小于1
 		double sign = thisrate - 1;
 		sign = Math.signum(sign);
@@ -715,23 +722,23 @@ public class Fund {
 	public double getdiscount(double sign, double lasttoprate, double standard) {
 		if (sign > 0) {
 			// 如果判升
-			if (lasttoprate > standard) {
+			//if (lasttoprate > standard) {
 				// 高于低水位，补段除以水位线补段
-				return (1 - lasttoprate) * (1-standard) * 0.5;
-			} else {
+				return (1 - lasttoprate) / (standard);
+			/*} else {
 				// 低于低水位，置信升率为1
 				return 1; // (standard - lasttoprate) / (standard);
-			}
+			}*/
 		} else {
 			// 如果判降
-			if (lasttoprate < (1 - standard)) {
+			//if (lasttoprate < (1 - standard)) {
 				// 低于低水位的对称线，本段除以低水位补长度
-				return lasttoprate * (1-standard) * 0.5; // (lasttoprate - standard)
+				return lasttoprate; // (lasttoprate - standard)
 														// / (1 - standard);
-			} else {
+			/*} else {
 				// 高于低水位的对称线，置信降率为1
 				return 1; // (lasttoprate) / (standard);
-			}
+			}*/
 		}
 	}
 
