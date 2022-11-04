@@ -358,6 +358,7 @@ public class Investment {
 							assemble.cash += investments.get(i).cash;
 						} else {
 							bw.write(assemble.print() + "\n");
+							bw.write(investments.get(i).print() + "\n");
 							fold = false;
 						}
 					} else {
