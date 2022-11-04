@@ -1,5 +1,8 @@
 package polyfit;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+
 import Jama.Matrix;
 
 public class pack {
@@ -137,6 +140,21 @@ public class pack {
 
 	public void setY(double y) {
 		this.y = y;
+	}
+	public String loadparam(String field) {
+		String path = "";
+		String result = "";
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(path));
+			String aline = null;
+			for (int i = 0; (aline = br.readLine()) != null; i++) {
+				result =  Framework.getInfoFromJson(aline, field, ":");
+			}
+			br.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return result;
 	}
 
 }

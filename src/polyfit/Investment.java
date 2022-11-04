@@ -14,6 +14,7 @@ public class Investment {
 	int id = 0;
 	long timestamp = 0;
 	String fund = "";
+	String remark = "";
 	double cost = 0;
 	double NAV = 0;
 	double inrates = 0;
@@ -37,11 +38,12 @@ public class Investment {
 		id = Integer.valueOf(info[0]);
 		fund = info[2];// + "," + info[2];
 		cost = Double.valueOf(info[1]);
+		remark = info[3];
 	}
 
 	public String printtodolist(int id) {
 		String result = "";
-		result += id + "," + cost + "," + fund + "(" + verify.cutDouble(inrates, 2) + ")";
+		result += id + "," + cost + "," + fund + "(" + verify.cutDouble(inrates, 3) + ")";
 		return result;
 	}
 
@@ -101,7 +103,7 @@ public class Investment {
 		if (number >= 0) {
 			info2 = info2.substring(0, info2.indexOf("%"));
 			buy(trade.fund, number, Double.valueOf(info1),
-					Double.valueOf(info2) / 100, type);
+					Double.valueOf(info2) / 100, type, trade.remark);
 		} else if (number < 0) {
 			sell(trade.fund, number, Double.valueOf(info1), type);
 		}
@@ -144,7 +146,7 @@ public class Investment {
 			double nowCash = gettotalcash(investments);
 			double deltaCost = preCost - nowCost;
 			double deltaCash = nowCash - preCash;
-			if (deltaCash / deltaCost > 1.01) {
+			if (deltaCash / deltaCost > 1.015) {
 				for (int i = 0; i < investments.size(); i++) {
 					investments.get(i).balance = investments.get(i).share * newNAV;
 				}
@@ -160,7 +162,7 @@ public class Investment {
 	}
 
 	public static void buy(String aim, double cost, double newNAV,
-			double inrates, int type) {
+			double inrates, int type, String remark) {
 		ArrayList<Investment> investments = loads(aim);
 		Investment thisInvestment = null;
 		boolean alreadyhas = false;
@@ -174,7 +176,7 @@ public class Investment {
 			}
 			if (!alreadyhas) {
 				Investment aInvestment = new Investment(0,
-				(type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp()), aim, cost, newNAV, inrates);
+				(type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp()), aim + remark, cost, newNAV, inrates);
 				if (cost / Investment.amount > 0.001) {
 					investments.add(aInvestment);
 					Investment.money -= cost;
@@ -334,8 +336,33 @@ public class Investment {
 				}
 				BufferedWriter bw = new BufferedWriter(new FileWriter(
 						file.getAbsoluteFile()));
+				boolean fold = false;
+				Investment assemble = null;
+				if (fold) {
+					assemble = new Investment();
+				}
 				for (int i = 0; i < investments.size(); i++) {
-					bw.write(investments.get(i).print() + "\n");
+					if (fold) {
+						if (investments.get(i).balance == 0) {
+							//result += id + "," + timestamp + "," + fund + "," + cost + "," + NAV
+							//		+ "," + inrates + "," + stockshare + "," + (share < 0.00000001 ? 0 : share) + "," + balance + "," + cash;
+							assemble.id = investments.get(i).id;
+							assemble.timestamp = investments.get(i).timestamp;
+							assemble.fund = investments.get(i).fund;
+							assemble.cost += investments.get(i).cost;
+							assemble.NAV = investments.get(i).NAV;
+							assemble.inrates = investments.get(i).inrates;
+							assemble.stockshare = investments.get(i).stockshare;
+							assemble.share = investments.get(i).share;
+							assemble.balance = investments.get(i).balance;
+							assemble.cash += investments.get(i).cash;
+						} else {
+							bw.write(assemble.print() + "\n");
+							fold = false;
+						}
+					} else {
+						bw.write(investments.get(i).print() + "\n");
+					}
 				}
 				bw.close();
 			}
