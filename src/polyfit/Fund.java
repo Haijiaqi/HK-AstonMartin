@@ -3,6 +3,10 @@ package polyfit;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.function.Function;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class Fund {
 	String code = "";
@@ -39,21 +43,31 @@ public class Fund {
 	double conclusion = 1;
 	String newNAVstring = "";
 	double fee = 0;
-
+	int gate = 0;
 	ArrayList<pack> points;
 	ArrayList<Investment> investments;
 
 	double tailstartcubic = 0;
 	ArrayList<pack> cubicpoints = new ArrayList<pack>();
 	ArrayList<pack> quadraticubicpoints = new ArrayList<pack>();
+	ArrayList<pack> evalpoints = new ArrayList<pack>();
 
 	// public Fund(String[] information, ArrayList<pack> points) {
 	// 	givedata(information, points);
 	// }
+	double order = 2;
+	int paint = 0;
+	int extrapolations = 0;
+	double amount = 20000;
+	public Fund() {
 
+	}
 	public Fund(String[] information, ArrayList<pack> points, double order, int paint) {
 		this.points = points;
 		this.information = information;
+		this.points = points;
+		this.order = order;
+		this.paint = paint;
 		code = Framework.safeget(information, 0);
 		name = Framework.safeget(information, 1);
 		String number = Framework.safeget(information,
@@ -72,8 +86,8 @@ public class Fund {
 			risklevel = (int)((points.size() / 245.0) * pack.maxorder);
 		}
 		risklevel = risklevel > pack.maxorder ? pack.maxorder : risklevel;
-		macroscopic(paint, 0);
-		microcosmic(order, paint, 0);
+		macroscopic();
+		microcosmic();
 		if (paint > 0) {
 			try {
 				Process pr = Runtime.getRuntime().exec("python " + Framework.basepath + "/canpaintin20210702.py");
@@ -86,17 +100,27 @@ public class Fund {
 			}
 		}
 	}
-	public Fund(String[] information, ArrayList<pack> points, double order, int paint, int extrapolations, double recommand) {
+	public Fund(String[] information, ArrayList<pack> points, double order, int paint, int extrapolations, double recommand, double amount, int gate) {
 		this.information = information;
+		this.gate = gate;
 		code = Framework.safeget(information, 0);
 		name = Framework.safeget(information, 1);
-		this.immediaterisk = recommand;
+		this.immediaterisk = (recommand > 0 ? recommand : 0);
 		this.points = points;
-		macroscopic(paint, extrapolations);
-		microcosmic(order, paint, extrapolations);
+		this.order = order;
+		this.paint = paint;
+		this.extrapolations = extrapolations;
+		this.amount = amount;
+		this.newNAVstring = points.get(points.size() - 1).val + "";
+		macroscopic();
+		microcosmic();
 		if (paint > 0) {
 			try {
-				verify.savenewdata(Framework.basepath + "/rawdata.txt", points);
+				String pythonconfig = Framework.getPath("coin", "paint", "pythonparam");
+				String rawdata = Framework.getPath("coin", "paint", "rawdata");
+				verify.appenddata(pythonconfig, " $" + newNAVstring + ";" + rawdata);
+				verify.savenewdata(rawdata, points);
+				// .basepath + "/rawdata.txt", points);
 				String command = "python3 " + Framework.basepath + "/canpaintin20210702.py";
 				System.out.println(command);
 				Process pr = Runtime.getRuntime().exec(command);
@@ -126,11 +150,14 @@ public class Fund {
 		polynomial_all.rawdata = parsePoints(Framework.getInfoFromJson(info, "tailpoints", ":"));
 		points = polynomial_all.rawdata;
 		quadraticpoints = points;
+		order = 2;
+		this.paint = paint;
+		extrapolations = 0;
 			// + Framework.getFieldPart("lastpoint", "@" + points.get(points.size() - 1).getX() + "|" + points.get(points.size() - 1).getY())
 			// + Framework.getFieldPart("tailpoints", organizePoints(quadraticpoints));
 		// ArrayList<pack> outpoints = verify.loadpoints(path, 0, 1000);
 		// risklevel = polynomial_all.process(points, risklevel).getRowDimension() - 1;
-		extractindex(true, 2, paint, 0);
+		extractindex(true);
 	}
 
 	// 计策修改时关注这里
@@ -160,7 +187,7 @@ public class Fund {
 	}
 
 	// 计策修改时关注这里
-	public void macroscopic(int paint, int extrapolations) {
+	public void macroscopic() {
 		// 加载当前项目在余额表中的总份额
 		// investments = Investment.loads(code);
 		// totalshare = gettotalshare();
@@ -170,7 +197,7 @@ public class Fund {
 		.getRowDimension() - 1;
 		risklevel = (int) (polynomial_all.worseAnalysis(points, produceRiskByName()).r / 0.1) + 1;
 		if (paint > 0) {
-			polynomial_all.paintCurve(Framework.basepath + "/polynomial.txt", pack.interval);
+			polynomial_all.paintCurve(Framework.getPath("coin", "paint", "polynomial"), pack.interval);
 		}
 		Polynomial polynomial_all1;
 		polynomial_all1 = polynomial_all.d(1);
@@ -181,7 +208,7 @@ public class Fund {
 		keypoints = mergesort(extreme, inflection);
 		// double[] startp = { polynomial_all.start };
 		// keypoints = mergesort(startp, keypoints);
-		double halflocalinterreal = Escale(keypoints, 1) / pack.interval;
+		double halflocalinterreal = Escale(keypoints, 0) / pack.interval;
 		int halflocalinter = (int)Math.round(halflocalinterreal);
 		double localinter = (int)Math.round(halflocalinterreal * 2);
 
@@ -190,7 +217,7 @@ public class Fund {
 		Polynomial polynomial_recent1;
 		polynomial_recent.process(cubicpoints, 3, 1, extrapolations); // 3, 1);
 		if (paint > 0) {
-			polynomial_recent.paintCurve(Framework.basepath + "/cubic.txt", pack.interval);
+			polynomial_recent.paintCurve(Framework.getPath("coin", "paint", "cubic"), pack.interval);
 		}
 		polynomial_recent1 = polynomial_recent.d(1);
 		double[] extremecubic = {};
@@ -262,12 +289,12 @@ public class Fund {
 		}
 	}
 
-	public void microcosmic(double order, int paint, int extrapolations) {
+	public void microcosmic() {
 		// 加载当前项目在余额表中的总份额
 		investments = Investment.loads(code);
 		totalshare = gettotalshare(0);
 		realshare = gettotalshare(1);
-		extractindex(false, order, paint, extrapolations);
+		extractindex(false);
 	}
 	
 	public double produceRiskByName () {
@@ -339,7 +366,7 @@ public class Fund {
 	}
 	
 	// 在线计算势能值，当减为负，当加为正。
-	public pack onLineDemandInvast(double fundamental, boolean online, double order, int paint, int extrapolations) {
+	public pack onLineDemandInvast(double fundamental, boolean online) {
 		pack result = new pack();
 		pack weight = new pack();
 		double x = points.get(points.size() - 1).getX();// + pack.interval;
@@ -386,6 +413,7 @@ public class Fund {
 			// result.r = pack.stagesweight[0] * result.x + pack.stagesweight[1] * result.value + pack.stagesweight[2] * result.y;
 			result.r = maxInthree(result.x, result.value, result.y, true);
 			result.val = weight.getY();
+			System.out.println("raw: " + weight.toString());
 		}
 		double delta = quadraticpoints.get(quadraticpoints.size() - 1).getY() - quadratic.f(quadratic.end, 0);
 		double base = quadraticpoints.get(quadraticpoints.size() - 1).val - delta;
@@ -405,24 +433,27 @@ public class Fund {
 				}				
 			}
 		}
+		System.out.println("updn: " + result.r + ", " + result.val);
 		if (paint > 0) {
-			verify.saveparam(Framework.basepath + "/weightup.txt", "");
-			verify.saveparam(Framework.basepath + "/weightdn.txt", "");
+			verify.saveparam(Framework.getPath("coin", "paint", "weightup"), "");
+			verify.saveparam(Framework.getPath("coin", "paint", "weightdn"), "");
 			if (result.r > 0) {
-				verify.appenddata(Framework.basepath + "/weightup.txt",
+				verify.appenddata(Framework.getPath("coin", "paint", "weightup"),
 				String.valueOf(x + 0 * pack.interval) + ","
 				+ String.valueOf(result.r * 1000 + points.get(points.size() - 1).getY()) + "\n");
+				System.out.println("into up!");
 				//verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(verify.cutDouble(result.r, 4)));
 			}
 			if (result.r < 0) {
 				if (result.val > -1) {
-					verify.appenddata(Framework.basepath + "/weightdn.txt",
+					verify.appenddata(Framework.getPath("coin", "paint", "weightdn"),
 					String.valueOf(x + 0 * pack.interval) + ","
-					+ String.valueOf(result.val * 100 + points.get(points.size() - 1).getY()) + "\n");
+					+ String.valueOf(result.val * 50 + points.get(points.size() - 1).getY()) + "\n");
+					System.out.println("into dn!");
 					//verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(verify.cutDouble(result.val, 4)));
 				}
 			}
-			quadratic.paintCurve(Framework.basepath + "/quatratic.txt", pack.interval);
+			quadratic.paintCurve(Framework.getPath("coin", "paint", "quatratic"), pack.interval);
 		}
 		return result;
 	}
@@ -448,7 +479,7 @@ public class Fund {
 				for (int i = 0; i < interval.length; i++) {
 						inter += interval[i];
 				}
-				inter /= interval.length;
+				inter /= ((interval.length == 1 ? 2 : interval.length) - 1);
 				return inter;
 			} else if (type == 1) {
 				Arrays.sort(interval);
@@ -620,10 +651,10 @@ public class Fund {
 				+ conclusion + ",";
 	}
 
-	public String extractindex(boolean online, double order, int paint, int extrapolations) {
+	public String extractindex(boolean online) {
 		outString = "";
 		pack result = new pack();
-		result = onLineDemandInvast(1, online, order, paint, extrapolations);
+		result = onLineDemandInvast(1, online);
 		Erate = result.r;// Investment.amount);
 		rateString = "(" + verify.cutDouble(result.x, 4) + "|" + verify.cutDouble(result.value, 4) + "|" + verify.cutDouble(result.y, 4) + ")";
 		// 加一是为了保持reliability函数的最小改动
@@ -632,13 +663,30 @@ public class Fund {
 		if (Erate >= 0) {
 			Erate *= immediaterisk;
 			conclusion = reliability * Erate / (1 + fee);
+			System.out.println("immediateriskup: " + immediaterisk + ", " + Erate);
 		} else {
 			Erate = result.val;
-			Erate *= -(immediaterisk - 2) / 2;
+			if (Erate > -1) {
+				double r = -(immediaterisk - 2);
+				Erate *= (r > 1 ? 1 : r);				
+				if (Erate <= -1) {
+					Erate = -0.999;
+				}				
+			}
+			System.out.println("immediateriskdn: " + (-(immediaterisk - 2)) + ", " + Erate);
 			conclusion = reliability * Erate / (1 + fee);
 		}
-		Erate *= Erate == -1 ? 1 : getdiscount(Erate, lastpointtoprate, pack.discountRate);
-		verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(verify.cutDouble(Erate, 4)));
+		//Erate *= Erate == -1 ? 1 : getdiscount(Erate, lastpointtoprate, pack.discountRate);
+		if (paint > 0) {
+			String pythonconfig = Framework.getPath("coin", "paint", "pythonparam");
+			verify.saveparam(pythonconfig, "");
+			verify.appenddata(pythonconfig, String.valueOf(verify.cutDouble(Erate, 4)));
+		}
+		if (Erate > 0) {
+			Erate = gate == -1 ? 0 : Erate;
+		} else if (Erate < 0) {
+			Erate = gate == 1 ? 0 : Erate;
+		}
 		Erate += 1; //reliability * Erate / (1 + fee) + 1;
 		// 计策修改时关注这里，第7个值（[6]，这里是conclusion）是真正参与测评的。增持与减持列表同使用该值。该值貌似始终需要大于零（sortLevelIndex）。区别在于是否小于1，这涉及到分值叉录入、减持计算等等；TODO
 		outString = printFund();
@@ -654,6 +702,7 @@ public class Fund {
 		+ Framework.getFieldPart("totalshare", totalshare)
 		+ Framework.getFieldPart("realshare", realshare)
 		+ Framework.getFieldPart("Erate", Erate)
+		+ Framework.getFieldPart("amount", amount)
 		+ Framework.getFieldPart("reliability", reliability)
 		+ Framework.getFieldPart("conclusion", conclusion)
 		+ Framework.getFieldPart("newNAV", newNAVstring)
@@ -778,6 +827,7 @@ public class Fund {
 		}
 		return result;
 	}
+	
 	//
 	// public double newaccumulatevalue(double accumulatevalue, double preY,
 	// double currentY) {
@@ -797,12 +847,12 @@ public class Fund {
 	public String organizePoints(ArrayList<pack> quadraticpoints) {
 		String result = "";
 		for (int i = 0; i < quadraticpoints.size(); i++) {
-			result += "@" + quadraticpoints.get(i).getX() + "|" + quadraticpoints.get(i).getY();
+			result += "@" + quadraticpoints.get(i).getX() + "%" + quadraticpoints.get(i).getY();
 		}
 		return result;
 	}
 
-	public ArrayList<pack> parsePoints(String info) {
+	public static ArrayList<pack> parsePoints(String info) {
 		ArrayList<pack> points = new ArrayList<pack>();
 		info = info.substring(1, info.length());
 		String[] pointsInfo = info.split("@");
@@ -812,8 +862,8 @@ public class Fund {
 		return points;
 	}
 
-	public pack parsePoint(String info) {
-		String[] xy = info.split("/|");
+	public static pack parsePoint(String info) {
+		String[] xy = info.split("%");
 		pack result = new pack(Double.valueOf(xy[0]), Double.valueOf(xy[1]));
 		return result;
 	}

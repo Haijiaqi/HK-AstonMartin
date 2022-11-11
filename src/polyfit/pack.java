@@ -3,6 +3,9 @@ package polyfit;
 import java.io.BufferedReader;
 import java.io.FileReader;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import Jama.Matrix;
 
 public class pack {
@@ -109,6 +112,38 @@ public class pack {
 		this.y = y;
 		this.val = y;
 	}
+	public pack(JSONObject point) {
+		super();
+		int x = Integer.valueOf(point.getString("ts"));
+		this.id = (int) x;
+		this.x = x;
+		this.y = Double.valueOf(point.getString("idxPx"));
+		this.val = y;
+	}
+	public pack(JSONArray pointArray) {
+		super();
+		double x = pointArray.optDouble(0);
+		double o = pointArray.optDouble(1);
+		double h = pointArray.optDouble(2);
+		double l = pointArray.optDouble(3);
+		double c = pointArray.optDouble(4);
+		this.id = (int) x;
+		this.x = x;
+		this.y = ((o + h + l + c) / 4);
+		this.val = y;
+	}
+	public pack(JSONArray pointArray, boolean BN) {
+		super();
+		double x = pointArray.optDouble(0);
+		double o = pointArray.optDouble(1);
+		double h = pointArray.optDouble(2);
+		double l = pointArray.optDouble(3);
+		double c = pointArray.optDouble(4);
+		this.id = (int) x;
+		this.x = x;
+		this.y = ((o + h + l + c) / 4);
+		this.val = y;
+	}
 
 	public Matrix getMatrix() {
 		return matrix;
@@ -141,6 +176,9 @@ public class pack {
 	public void setY(double y) {
 		this.y = y;
 	}
+	public String toString() {
+		return this.x + ", " + this.y;
+	}
 	public String loadparam(String field) {
 		String path = "";
 		String result = "";
@@ -151,6 +189,7 @@ public class pack {
 				result =  Framework.getInfoFromJson(aline, field, ":");
 			}
 			br.close();
+			Thread.sleep(5);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

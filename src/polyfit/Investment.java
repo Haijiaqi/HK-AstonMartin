@@ -8,6 +8,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import formula.number;
 
 public class Investment {
@@ -43,7 +46,7 @@ public class Investment {
 
 	public String printtodolist(int id) {
 		String result = "";
-		result += id + "," + cost + "," + fund + "(" + verify.cutDouble(inrates, 3) + ")";
+		result += id + "," + cost + "," + fund + " " + verify.cutDouble(inrates, 3);
 		return result;
 	}
 
@@ -98,14 +101,14 @@ public class Investment {
 		return aInvestment;
 	}
 
-	public static void trade(Investment trade, String info1, String info2, int type) {
+	public static void trade(Investment trade, String info1, String info2, int type, boolean online) {
 		double number = Double.valueOf(trade.cost);
 		if (number >= 0) {
 			info2 = info2.substring(0, info2.indexOf("%"));
 			buy(trade.fund, number, Double.valueOf(info1),
-					Double.valueOf(info2) / 100, type, trade.remark);
+					Double.valueOf(info2) / 100, type, trade.remark, online);
 		} else if (number < 0) {
-			sell(trade.fund, number, Double.valueOf(info1), type);
+			sell(trade.fund, number, Double.valueOf(info1), type, online);
 		}
 	}
 
@@ -116,7 +119,7 @@ public class Investment {
 		return result;
 	}
 
-	public static void sell(String aim, double share, double newNAV, int type) {
+	public static void sell(String aim, double share, double newNAV, int type, boolean online) {
 		ArrayList<Investment> investments = loads(aim);
 		Investment thisInvestment = null;
 		share *= -1;
@@ -146,26 +149,67 @@ public class Investment {
 			double nowCash = gettotalcash(investments);
 			double deltaCost = preCost - nowCost;
 			double deltaCash = nowCash - preCash;
-			if (deltaCash / deltaCost > 1.015) {
+			String path = Framework.getPath("coin", "paint", "processInfo");
+			JSONObject param = verify.loadObject(path);
+			path = Framework.getPath("coin", "paint", "list");
+			JSONArray coins = verify.loadArray(path);
+			//param.put("coins", list);
+			double bar = param.optDouble("bar");
+			if (deltaCash / deltaCost > bar) {
+				boolean fold = false;
 				for (int i = 0; i < investments.size(); i++) {
 					investments.get(i).balance = investments.get(i).share * newNAV;
 				}
-				Investment.money += deltaCash;
-				double marketprice = gettotalmarketprice(investments, newNAV);
-				double profit = Investment.money + marketprice * 0.999;
-				double nowAmount =  20000 + (profit > 0 ? profit / 40 : 0);
-				Investment.amount = Investment.amount > nowAmount ? Investment.amount : nowAmount;
-				System.out.println(Investment.money + " + " + marketprice + " = " + profit + " price " + newNAV + " amount " + Investment.amount);
-				rewrites(aim, investments);
+				if (online) {
+					//JSONArray coins = param.getJSONArray("coins");
+					for (int i = 0; i < coins.length(); i++) {
+						JSONObject record = coins.getJSONObject(i);
+						if (aim.equals(record.getString("type"))) {
+							fold = record.getBoolean("fold");
+							int paint = record.getInt("paint");
+							if (paint > 0) {
+								paint -= 1;
+								record.put("paint", paint);
+							}
+							double money = record.getDouble("cost");
+							money += deltaCash;
+							record.put("cost", money);
+							record.put("NAV", newNAV);
+							double marketprice = gettotalmarketprice(investments, newNAV);
+							record.put("balance", marketprice);
+							double profit = money + marketprice * (1 - record.getDouble("inrates"));
+							record.put("cash", profit);
+							double start = record.getDouble("start");
+							double amount = record.getDouble("amount");
+							double nowAmount = start + (profit > 0 ? profit / record.getDouble("flag") : 0);
+							record.put("amount", amount > nowAmount ? amount : nowAmount);
+							coins.put(i, record);
+							//param.put("coins", coins);
+							verify.saveparam(path, coins.toString());
+							verify.appenddata(Framework.getPath("coin", "paint", "history"), coins.toString() + "\n");
+							System.out.println(record.toString());
+							break;
+						}
+					}
+					/*Investment.money += deltaCash;
+					double marketprice = gettotalmarketprice(investments, newNAV);
+					double profit = Investment.money + marketprice * 0.999;
+					double nowAmount =  20000 + (profit > 0 ? profit / 40 : 0);
+					Investment.amount = Investment.amount > nowAmount ? Investment.amount : nowAmount;
+					System.out.println(Investment.money + " + " + marketprice + " = " + profit + " price " + newNAV + " amount " + Investment.amount);
+					*/
+				}
+				rewrites(aim, investments, fold);
 			}
 		}
 	}
 
 	public static void buy(String aim, double cost, double newNAV,
-			double inrates, int type, String remark) {
+			double inrates, int type, String remark, boolean online) {
 		ArrayList<Investment> investments = loads(aim);
 		Investment thisInvestment = null;
 		boolean alreadyhas = false;
+		boolean fold = false;
 		if (cost != 0) {
 			for (int i = 0; i < investments.size(); i++) {
 				thisInvestment = investments.get(i);
@@ -176,15 +220,53 @@ public class Investment {
 			}
 			if (!alreadyhas) {
 				Investment aInvestment = new Investment(0,
-				(type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp()), aim + remark, cost, newNAV, inrates);
-				if (cost / Investment.amount > 0.001) {
+				(type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp()), aim + " " + remark, cost, newNAV, inrates);
+				String path = Framework.getPath("coin", "paint", "processInfo");
+				JSONObject param = verify.loadObject(path);
+				path = Framework.getPath("coin", "paint", "list");
+				JSONArray coins = verify.loadArray(path);
+				//param.put("coins", list);
+				double open = param.optDouble("open");
+				if (cost > open) {
 					investments.add(aInvestment);
-					Investment.money -= cost;
-					double marketprice = gettotalmarketprice(investments, newNAV);
-					double profit = Investment.money + marketprice * 0.999;
-					double nowAmount =  20000 + (profit > 0 ? profit / 40 : 0);
-					Investment.amount = Investment.amount > nowAmount ? Investment.amount : nowAmount;
-					System.out.println(Investment.money + " + " + marketprice + " = " + profit + " price " + newNAV + " amount " + Investment.amount);
+					//JSONArray coins = param.getJSONArray("coins");
+					for (int i = 0; i < coins.length(); i++) {
+						JSONObject record = coins.getJSONObject(i);
+						if (aim.equals(record.getString("type"))) {
+							fold = record.getBoolean("fold");
+							int paint = record.getInt("paint");
+							if (paint > 0) {
+								paint -= 1;
+								record.put("paint", paint);
+							}
+							double money = record.getDouble("cost");
+							money -= cost;
+							record.put("cost", money);
+							record.put("NAV", newNAV);
+							double marketprice = gettotalmarketprice(investments, newNAV);
+							record.put("balance", marketprice);
+							double profit = money + marketprice * (1 - inrates);
+							record.put("cash", profit);
+							double start = record.getDouble("start");
+							double amount = record.getDouble("amount");
+							double nowAmount = start + (profit > 0 ? profit / record.getDouble("flag") : 0);
+							record.put("amount", amount > nowAmount ? amount : nowAmount);
+							coins.put(i, record);
+							param.put("coins", coins);
+							verify.saveparam(path, coins.toString());
+							verify.appenddata(Framework.getPath("coin", "paint", "history"), coins.toString() + "\n");
+							System.out.println(record.toString());
+							break;
+						}
+					}
+						
+						/*Investment.money -= cost;
+						double marketprice = gettotalmarketprice(investments, newNAV);
+						double profit = Investment.money + marketprice * 0.999;
+						double nowAmount =  20000 + (profit > 0 ? profit / 40 : 0);
+						Investment.amount = Investment.amount > nowAmount ? Investment.amount : nowAmount;
+						System.out.println(Investment.money + " + " + marketprice + " = " + profit + " price " + newNAV + " amount " + Investment.amount);
+						*/
 				}
 			}
 		}
@@ -192,7 +274,7 @@ public class Investment {
 			investments.get(i).stockshare = investments.get(i).share;
 			investments.get(i).balance = investments.get(i).share * newNAV;
 		}
-		rewrites(aim, investments);
+		rewrites(aim, investments, fold);
 	}
 
 	public double buysome(double cost, double newNAV, double rates) {
@@ -225,7 +307,7 @@ public class Investment {
 			thisInvestment = investments.get(i);
 			thisInvestment.getbalancebyNAV(newNAV);
 		}
-		rewrites(aim, investments);
+		rewrites(aim, investments, false);
 	}
 
 	public static Investment calculate(String aim) {
@@ -315,6 +397,7 @@ public class Investment {
 					investments.add(aInvestment);
 				}
 				br.close();
+				Thread.sleep(5);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -322,7 +405,7 @@ public class Investment {
 		return investments;
 	}
 
-	public static void rewrites(String code, ArrayList<Investment> investments) {
+	public static void rewrites(String code, ArrayList<Investment> investments, boolean fold) {
 		try {
 			if (investments.size() > 0) {
 				String path = Framework.getPath("balance", "balance", code);// balanceDir
@@ -336,7 +419,6 @@ public class Investment {
 				}
 				BufferedWriter bw = new BufferedWriter(new FileWriter(
 						file.getAbsoluteFile()));
-				boolean fold = false;
 				Investment assemble = null;
 				if (fold) {
 					assemble = new Investment();
@@ -366,8 +448,9 @@ public class Investment {
 					}
 				}
 				bw.close();
+				Thread.sleep(5);
 			}
-		} catch (IOException e) {
+		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
 	}

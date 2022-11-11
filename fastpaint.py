@@ -55,7 +55,7 @@ def getXYp(path, outsize, divide):
 
 
 def main():
-    basepath = os.getcwd() + '/'
+    basepath = os.getcwd() + '/work/coin/paint/'
     x = []
     y = []
     x, y = getXY(basepath + "function.txt", 1000)

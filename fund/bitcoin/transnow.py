@@ -2,6 +2,12 @@ import demjson
 import os
 import requests
 import time
+def pause(h, m):
+    while True:
+        permittime = time.gmtime(time.time() + 28800)
+        if permittime[3] == h and permittime[4] == m:
+            break
+        time.sleep(58)
 def getparam(index):
     basepath = os.getcwd() + '/' + "D7"
     fp = open(basepath + ".txt")#D:\\Aproject\\params.txt", 'r')
@@ -43,6 +49,27 @@ def getparamfromnet(rawdata, path):
     fi.close()
     #print(result["data"]["body"]["data"]["points"]["1665414600"]["v"][4])
     return result
+def saveparamfromnet(rawdata, path):
+    result = demjson.decode(rawdata)
+    fo = open(path, 'r')
+    file = []
+    for aline in fo:
+        file.append(aline)
+    fo.close()
+    length = len(file)
+    start = length - 120 + 1
+    if start < 0:
+        start = 0
+    fi = open(path, 'w')
+    fi.write('')
+    fi.close()
+    fi = open(path, 'a')
+    for i in range(start, length):
+        fi.write(file[i])
+    aline = result["data"][0]["ts"] + ',' + result["data"][0]["idxPx"]
+    fi.write(aline + '\n')
+    fi.close()
+    return result
     
 def getHTMLText(url):
     try:
@@ -63,10 +90,16 @@ def turnpage(url, start, inter, page):
     print(pi)
     return url.replace(pre, pi)
 
-name = 'okex15.txt'
-inter = 86400000
-start = 1655481600000
-basepath = os.getcwd() + '/fund/coin/'
+name = 'okex15s.txt'
+#inter = 86400000
+#start = 1655481600000
+basepath = os.getcwd() + '/'#fund/coin/'
+while True:
+    url = 'https://www.okx.com/api/v5/market/index-tickers?instId=BTC-USD'
+    text = getHTMLText(url)
+    saveparamfromnet(text, basepath + name)
+    time.sleep(15)
+        
 fi = open(basepath + name, 'w')
 fi.write('')
 fi.close()

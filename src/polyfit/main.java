@@ -7,6 +7,12 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Scanner;
+
+import javax.print.DocFlavor.READER;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class main {
 	// private static Logger logger = LogManager.getLogger("HelloLog4j");
@@ -41,13 +47,102 @@ public class main {
 
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
+		/*String thispath = Framework.basepath + "/fund/bitcoin/okex15.txt";
+		String path = Framework.getPath("balance", "balance", "BTC");
+		ArrayList<pack> outpoints = verify.loadpoints(thispath, 0, 120, -1);
+		Polynomial aFund = new Polynomial();
+		aFund.analysis(outpoints, true);
+		verify.getData(false, "BTC-USD", 15 * 60, 120, -1);*/
+		/*JSONObject jo = new JSONObject();
+		JSONArray ja = new JSONArray();
+		jo.put("On", "true");
+		jo.put("rd", 12 * 60 * 60);
+		jo.put("nd", 15 * 60);
+		jo.put("st", 15);
+		JSONObject BTC = new JSONObject();
+		BTC.put("type", "BTC");
+		BTC.put("name", "BTC");
+		BTC.put("order", 2);
+		BTC.put("amount", 12000);
+		BTC.put("paint", 0);
+		BTC.put("struct", "@19000|2@21000|1@26000|0");
+		JSONObject YFII = new JSONObject();
+		YFII.put("type", "YFII");
+		YFII.put("name", "YFII");
+		YFII.put("order", 2);
+		YFII.put("amount", 12000);
+		YFII.put("paint", 0);
+		YFII.put("struct", "@19000|2@21000|1@26000|0");
+		ja.put(BTC);
+		ja.put(YFII);
+		jo.put("coins", ja);
+		System.out.println(jo.toString());*/
+		// Java program to demonstrate working of Scanner in Java
+		// Using Scanner for Getting Input from User
+		Scanner in = new Scanner(System.in);
+		System.out.println("resore seconds data?[yes/no]");
+		String s = in.nextLine();
+		in.close();
+		if ("yes".equals(s)) {
+			String path = Framework.getPath("coin", "seconds", "BTC-USDT");
+			verify.saveparam(path, "");
+			path = Framework.getPath("coin", "seconds", "YFII-USDT");
+			verify.saveparam(path, "");
+		}
+		for (int i = 0; true; i++) {
+			JSONObject params = verify.loadObject(Framework.getPath("coin", "paint", "processInfo"));
+			JSONArray list = verify.loadArray(Framework.getPath("coin", "paint", "list"));
+			params.put("coins", list);
+			if ("true".equals(params.getString("On"))) {
+				JSONArray coins = params.getJSONArray("coins");
+				int flag = 0;
+				int rd = params.optInt("rd");
+				int nd = params.optInt("nd");
+				int st = params.optInt("st");
+				System.out.println(Framework.timeToGo(nd));
+				if (Framework.ifNewTime(rd)) {
+					//getrun days 15minutes 15seconds
+					flag = 111;
+				} else if (Framework.ifNewTime(nd)) {
+					//getrun 15minutes 15seconds
+					flag = 11;
+				} else if (Framework.ifNewTime(st)) {
+					//getrun 15seconds
+					flag = 1;
+				}
+				switch (11) {
+					case 111:
+						//Framework.runhours(coins, rd);
+					case 11:
+						Framework.runminutes(coins, nd);
+					case 1:
+						//Framework.runseconds(coins, st);
+						break;
+				
+					default:
+						break;
+				}
+				
+				Framework.timeToGo(st);
+			} else {
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+	@SuppressWarnings("unused")
+	public static void maintt(String[] args) {
 		String thispath = Framework.basepath + "/fund/bitcoin/okex15.txt";
 		String path = Framework.getPath("balance", "balance", "BTC");
-		verify.saveparam(path, "");
+		//verify.saveparam(path, "");
 		ArrayList<pack> evalpoints = new ArrayList<>();
-		pack pack1 = new pack(17000, 2);
+		pack pack1 = new pack(19000, 2);
 		evalpoints.add(pack1);
-		pack pack2 = new pack(20000, 1);
+		pack pack2 = new pack(21000, 1);
 		evalpoints.add(pack2);
 		//pack pack3 = new pack(21000, 1);
 		//evalpoints.add(pack3);
@@ -55,11 +150,15 @@ public class main {
 		evalpoints.add(pack4);
 		Polynomial p = new Polynomial();
 		p.processLS(evalpoints, 2);
-		p.display(5000);
-		for (int i = 0; i < 13050; i++) {
-			String[] infomation = {"BTC", "" +  i};
+		Polynomial start = new Polynomial(2);
+		start.assemble(p, 1);
+		Polynomial zero = new Polynomial(27000, 0);
+		start.assemble(zero, 1);
+		start.display(5000);
+		for (int i = 0; i < 13300; i++) {
+			String[] infomation = {"BTC", " " +  i};
 			ArrayList<pack> outpoints = verify.loadpoints(thispath, 0 + i, 120 + i, -1);
-			double recommand = p.f(outpoints.get(outpoints.size() - 1).val, 0);
+			double recommand = start.f(outpoints.get(outpoints.size() - 1).val, 0);
 			// Investment.balanceDir = balanceDir;
 			// 没加载到点就下一项
 			if (outpoints.size() <= pack.maxorder * 5) {
@@ -69,17 +168,19 @@ public class main {
 					paint = 0;
 				}
 				if (paint > 0) {
-					verify.saveparam(Framework.basepath + "/pythonparam.txt", thispath + ";" + "rawinfo[0]");					
+					String pythonconfig = Framework.getPath("coin", "paint", "pythonparam");
+					verify.saveparam(pythonconfig, thispath + ";");					
 				}
 				// 计策修改时关注这里以下，确保能够被分配到对应的风险级中
 				// 原始数据给予解析
-				Fund aFund = new Fund(infomation, outpoints, 2, paint, 6, recommand);
+				//Fund aFund = new Fund(infomation, outpoints, 2, paint, 6, recommand, 20000);
+				//aFund.getInfoFromNet("");
 				verify.saveparam(Framework.basepath + "/processInfo.txt", "");
-				verify.appenddata(Framework.basepath + "/processInfo.txt"
+				/*verify.appenddata(Framework.basepath + "/processInfo.txt"
 						// replacepath(
 						// replacepath(indexPath, "date", gettodate()),
 						// "all", String.valueOf(aFund.risklevel))
-						, aFund.outString + "\n");
+						, aFund.outString + "\n");*/
 				Framework.produceTradeItem();
 				Framework.execute(outpoints.get(outpoints.size() - 1).val + "");
 			}
@@ -432,6 +533,7 @@ public class main {
 				}
 			}
 			br.close();
+			Thread.sleep(5);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -504,7 +606,8 @@ public class main {
 					file.getAbsoluteFile(), true));
 			bw.append(content);
 			bw.close();
-		} catch (IOException e) {
+			Thread.sleep(5);
+		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
 	}

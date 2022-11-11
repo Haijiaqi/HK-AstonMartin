@@ -21,6 +21,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 public class Framework {
 
 	public static long todaytimestamp = 0;
@@ -252,6 +255,69 @@ public class Framework {
 		Investment.amount = (coefficient - 1) * 20000;
 	}
 
+	public static void runseconds(JSONArray coins, int seconds) {
+		for (int j = 0; j < coins.length(); j++) {
+			JSONObject obj = coins.getJSONObject(j);
+			Polynomial start = new Polynomial(1);
+			String[] info = { obj.getString("type"), obj.getString("name") };
+			int order = Integer.parseInt(obj.getString("order"));
+			int paint = Integer.parseInt(obj.getString("paint"));
+			String upper = Framework.getPath("coin", "minutes", info[0]);
+			upper = verify.loadparam(upper);
+			double Erate = Double.valueOf(Framework.getInfoFromJson(upper, "Erate", ":")) - 1;
+			String newNAVstring = Framework.getInfoFromJson(upper, "newNAV", ":");
+			double amount = Double.parseDouble(obj.getString("amount"));
+			int extrapolation = obj.optInt("extrapolation");
+			String infomation = processAfund(info, seconds, 120, order, extrapolation, start, Erate > 0 ? 1 : -1, amount * Erate, "", paint);
+			String trade = Framework.produceTradeItem(infomation);
+			executeOnline(trade, newNAVstring);
+		}
+	}
+	public static void runminutes(JSONArray coins, int seconds) {
+		for (int j = 0; j < coins.length(); j++) {
+			JSONObject obj = coins.getJSONObject(j);
+			ArrayList<pack> structs = Fund.parsePoints(obj.getString("struct"));
+			Polynomial p = new Polynomial();
+			p.processLS(structs, 2);
+			Polynomial start = new Polynomial(2);
+			start.assemble(p, 1);
+			Polynomial zero = new Polynomial(structs.get(structs.size() - 1).x, 0);
+			start.assemble(zero, 1);
+			//start.display(1000);
+			String[] info = { obj.getString("type"), obj.getString("name") };
+			double order = obj.optDouble("order");
+			double amount = obj.optDouble("amount");
+			int paint = obj.optInt("paint");
+			int extrapolation = obj.optInt("extrapolation");
+			String infomation = processAfund(info, seconds, 120, order, extrapolation, start, 0, amount, Framework.getPath("coin", "minutes", info[0]), paint);
+			if (!"".equals(infomation)) {
+				String newNAVstring = Framework.getInfoFromJson(infomation, "newNAV", ":");
+				String trade = Framework.produceTradeItem(infomation);
+				executeOnline(trade, newNAVstring);				
+			}
+		}
+	}
+	public static void runhours(JSONArray coins, int second) {
+		for (int j = 0; j < coins.length(); j++) {
+			/* 1\getdatafromnet
+			 * 2\runestimate
+			 * 3\trade
+			 */
+		}
+	}
+	public static String processAfund(String[] type, int seconds, int num, double order, int extrapolation, Polynomial f, int gate, double amount, String path, int paint) {
+		ArrayList<pack> points = null;
+		points = verify.getData(seconds < 60, type[0], seconds, num, -1);	
+		if (points == null) {
+			return "";
+		}
+		//points = verify.loadpoints(Framework.getPath("coin", "paint", "rawdata"), 0, 150, -1);	
+		Fund afund = new Fund(type, points, order, paint, extrapolation, f.f(points.get(points.size() - 1).val, 0), amount, gate);
+		if (!"".equals(path)) {
+			verify.saveparam(path, afund.outString + "\n");
+		}
+		return afund.outString;
+	}
 	// 产出指标数
 	public static void produceFundIndex(/*
 										 * String listPath, String fundDir, //
@@ -463,7 +529,7 @@ public class Framework {
 					aInvestment = new Investment();
 					aInvestment.infoString = iline;
 					// aInvestment.fund = aindex[0] + "," + aindex[1];
-					aInvestment.fund = Framework.getInfoFromJson(iline, "code", ":") + "," + Framework.getInfoFromJson(iline, "name", ":");
+					aInvestment.fund = Framework.getInfoFromJson(iline, "code", ":") + " " + Framework.getInfoFromJson(iline, "name", ":");
 					// aInvestment.share = Double.valueOf(safeget(aindex, 2));
 					aInvestment.stockshare = Double.valueOf(Framework.getInfoFromJson(iline, "totalshare", ":"));
 					aInvestment.share = Double.valueOf(Framework.getInfoFromJson(iline, "realshare", ":"));
@@ -502,6 +568,40 @@ public class Framework {
 			e.printStackTrace(new PrintStream(baos));
 			log(baos.toString());
 		}
+	}
+	public static String produceTradeItem(String iline) {
+		Investment aInvestment;
+		aInvestment = new Investment();
+		aInvestment.infoString = iline;
+		aInvestment.fund = Framework.getInfoFromJson(iline, "code", ":") + "," + Framework.getInfoFromJson(iline, "name", ":");
+		aInvestment.stockshare = Double.valueOf(Framework.getInfoFromJson(iline, "totalshare", ":"));
+		aInvestment.share = Double.valueOf(Framework.getInfoFromJson(iline, "realshare", ":"));
+		aInvestment.inrates = Double.valueOf(Framework.getInfoFromJson(iline, "Erate", ":")) - 1;
+		aInvestment.cash = Double.valueOf(Framework.getInfoFromJson(iline, "amount", ":"));
+		if (aInvestment.inrates < 0) {
+		// 导出的风险指数小于1且总额大于1
+			if (aInvestment.inrates > -1) {
+				/*aInvestment.cost = aInvestment.stockshare * aInvestment.inrates * -1;
+				aInvestment.cost = aInvestment.cost - (aInvestment.stockshare - aInvestment.share);
+				if (aInvestment.cost < 0) {
+					aInvestment.cost = 0.000000001;
+				}
+				aInvestment.cost *= -1;*/
+				aInvestment.cost = aInvestment.inrates;
+			}
+		} else if (aInvestment.inrates > 0) {
+			if (aInvestment.inrates > 0.99) {
+				System.out.println("");
+			}
+			aInvestment.cost = aInvestment.cash * aInvestment.inrates;
+			aInvestment.cost = verify.cutDouble(aInvestment.cost, 2);
+		}
+		return aInvestment.printtodolist(0);
+	}
+
+	public static void executeOnline(String line, String price) {
+		Investment item = new Investment(line);
+		Investment.trade(item, price, "0.1%", 0, true);
 	}
 
 	public static ArrayList<Investment> distribute(ArrayList<Investment> data) {
@@ -666,7 +766,7 @@ public class Framework {
 					ArrayList<Investment> trades = getfundtrade(meta[0]);
 					for (int j = 0; j < trades.size(); j++) {
 						Investment.trade(trades.get(j), meta[4],
-								meta[listinfolength - 1], 1);
+								meta[listinfolength - 1], 1, false);
 					}
 				}
 				br.close();
@@ -695,7 +795,7 @@ public class Framework {
 				ArrayList<Investment> trades = getfundtrade("BTC");
 				for (int j = 0; j < trades.size(); j++) {
 					Investment.trade(trades.get(j), price,
-							"0.1%", 0);
+							"0.1%", 0, false);
 				}
 			} catch (Exception e) {
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -1037,6 +1137,30 @@ public class Framework {
 
 	public static long getNowTimestamp() {
 		return System.currentTimeMillis();
+	}
+
+	public static long timeToGo(int seconds) {
+		long inter = seconds * 1000;
+		for (int i = 0; true; i++) {
+			if ((new Long(System.currentTimeMillis()) - new Long(1667577600) * 1000) % inter < 23) {
+				return System.currentTimeMillis();
+			} else {
+				try {
+					Thread.sleep(23);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+	public static boolean ifNewTime(int seconds) {
+		long inter = seconds * 1000;
+		if ((new Long(System.currentTimeMillis()) - new Long(1667577600) * 1000) % inter < 1000) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	public static long getTodayTimestamp() {

@@ -8,6 +8,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import entity.Board;
 
 public class verify {
@@ -139,6 +142,7 @@ public class verify {
 					parseprint(aline, map);
 				}
 				br.close();
+				Thread.sleep(5);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -224,8 +228,9 @@ public class verify {
 					min = pointst.get(i).getY();
 				}
 			}
-			int divide = (int)min * 100;
+			int divide = (int)(min * 100 + 0.000001);
 			bt.close();
+			Thread.sleep(5);
 			BufferedReader br = new BufferedReader(new FileReader(path));
 			String aline = null;
 			pack firstpoint = null;
@@ -244,6 +249,293 @@ public class verify {
 				}
 			}
 			br.close();
+			Thread.sleep(5);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return points;
+	}
+	public static ArrayList<String> loadlines(String path, int start, int end) {
+		ArrayList<String> points = new ArrayList<>();
+		try {
+			File pointfile = new File(path);
+			if (!pointfile.exists()) {
+				return points;
+			}
+			BufferedReader br = new BufferedReader(new FileReader(path));
+			String aline = null;
+			for (int i = 0; i < end && (aline = br.readLine()) != null; i++) {
+				if (i >= start) {
+					points.add(aline);
+				}
+			}
+			br.close();
+			Thread.sleep(5);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return points;
+	}
+	public static ArrayList<pack> loadpoints(ArrayList<String> path, int start, int end, int type) {
+		ArrayList<pack> points = new ArrayList<pack>();
+		try {
+			String alinet = null;
+			pack pointt = null;
+			ArrayList<pack> pointst = new ArrayList<pack>();
+			int first = path.size();
+			double avg = 0;
+			int divide = 100000;
+			if (first >= 3) {
+				first = (first > 5 ? 5 : first);
+				for (int i = 0; i < first; i++) {
+					alinet = path.get(i);
+					if (i == 0) {
+						String[] xy = alinet.split(",");
+						pointt = new pack(Double.valueOf(xy[0]), 999999999);
+					}
+					if (i > 0) {
+						String[] xy = alinet.split(",");
+						pointt = new pack(Double.valueOf(xy[0]), Double.valueOf(xy[0]) - pointst.get(i - 1).getX());
+					}
+					pointst.add(pointt);
+				}
+				for (int i = 1; i < pointst.size(); i++) {
+					//if (min > pointst.get(i).getY()) {
+						avg += pointst.get(i).getY();
+					//}
+				}
+				avg /= (pointst.size() - 1);
+			}
+			divide = (int)(avg * 100 + 0.000001);
+			String aline = null;
+			pack firstpoint = null;
+			for (int i = 0; i < end; i++) {
+				aline = path.get(i);
+				if (i == start) {
+					String[] xy = aline.split(",");
+					firstpoint = new pack(Double.valueOf(xy[0]),
+							"None".equals(xy[1]) ? 0 : Double.valueOf(xy[1]));
+				}
+				if (i >= start) {
+					String[] xy = aline.split(",");
+					pack point = new pack(Double.valueOf(xy[0]),
+							Double.valueOf("None".equals(xy[1]) ? 0 : Double.valueOf(xy[1])));
+					point.minus(firstpoint, divide, type);
+					points.add(point);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return points;
+	}
+	public static JSONObject getInfoFromNet(String url) {
+		pack result = new pack();
+		// String url = "http://fundgz.1234567.com.cn/js/" + this.code + ".js?rt=" + Framework.getNowTimestamp();
+		url = Framework.getHttp(url);
+		JSONObject json = new JSONObject(url);
+		return json;
+	}
+	public static JSONArray getArrayFromNet(String url) {
+		pack result = new pack();
+		// String url = "http://fundgz.1234567.com.cn/js/" + this.code + ".js?rt=" + Framework.getNowTimestamp();
+		url = Framework.getHttp(url);
+		JSONArray json = new JSONArray(url);
+		return json;
+	}
+	public static ArrayList<pack> getPointsFromArray(JSONArray arr, int linenum) {
+		ArrayList<pack> points = new ArrayList<pack>();
+		int start = arr.length() - linenum;
+		if (start < 0) {
+			start = 0;
+		}
+		pack firstpoint = null;
+		for (int i = start; i < arr.length(); i++) {
+			JSONArray pointArray = (JSONArray)arr.get(i);
+			if (i == start) {
+				firstpoint = new pack(pointArray);
+			}
+			if (i >= start) {
+				pack point = new pack(pointArray);
+				point.minus(firstpoint, 1 * 1000 * 100, -1);
+				points.add(point);
+			}
+		}
+		return points;
+	}
+	public static String netInter(int seconds) {
+		String result = "";
+		if (seconds < 60) {
+			result = seconds + "s";
+		} else if (seconds / 60 < 20) {
+			result = seconds / 60 + "m";
+		} else {
+			result = seconds / 3600 + "H";
+		}
+		return result;
+	}
+	public static int keeplines(String path, int linenum, String line) {
+		try {
+			File pointfile = new File(path);
+			if (!pointfile.exists()) {
+				verify.saveparam(path, "");
+			}
+			BufferedReader bt = new BufferedReader(new FileReader(path));
+			String alinet = null;
+			pack pointt = null;
+			ArrayList<String> lines = new ArrayList<String>();
+			for (int i = 0; (alinet = bt.readLine()) != null; i++) {
+				lines.add(alinet);
+			}
+			bt.close();
+			Thread.sleep(5);
+			int length = lines.size();
+			int start = length - linenum + 1;
+			if (start < 0) {
+				start = 0;
+			}
+			BufferedWriter bw = new BufferedWriter(new FileWriter(
+					path));
+			for (int j = start; j < lines.size(); j++) {
+				bw.write(lines.get(j) + "\n");
+			}
+			bw.write(line);
+			bw.close();
+			Thread.sleep(5);
+			return lines.size() + 1;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+	public static ArrayList<pack> keeplinesIn(ArrayList<pack> pointst, int linenum, JSONObject json) {
+		ArrayList<pack> newpointst = new ArrayList<pack>();
+		int length = pointst.size();
+		int start = length - linenum + 1;
+		if (start < 0) {
+			start = 0;
+		}
+		for (int j = start; j < pointst.size(); j++) {
+			newpointst.add(pointst.get(j));
+		}
+		newpointst.add(new pack(json));
+		return newpointst;
+	}
+	public static ArrayList<pack> getData(boolean addORall, String type, int seconds, int num, int datatype) {
+		ArrayList<pack> points = new ArrayList<pack>();
+		String instId = "instId=" + type;
+		String url = "";
+		JSONObject json = null;
+		JSONArray jsonArray = null;
+		if (addORall) {
+			String path = Framework.getPath("coin", "seconds", type);
+			ArrayList<String> lines = new ArrayList<>();
+			lines = loadlines(path, 0, num);
+			url = "https://www.okx.com/api/v5/market/index-tickers?instId=BTC-USD".replace("instId=BTC-USD", instId);
+			//url = ("https://www.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1s&limit=120").replace("BTCUSDT", type.replace("-", ""));
+			json = getInfoFromNet(url);
+			jsonArray = json.getJSONArray("data");
+			json = (JSONObject)jsonArray.get(0);
+			int linenum = lines.size();
+			String line = json.getString("ts") + "," + json.getString("idxPx");
+			if (linenum < num - 1) {
+				verify.appenddata(path, line + "\n");
+				return null;
+			}
+			lines.add(line);
+			points = loadpoints(lines, 0, num, datatype);
+			if (points == null || points.size() == 0) {
+				return null;
+			}
+			keeplines(path, num - 1, line + "\n");// points.size();// 
+			/*jsonArray = getArrayFromNet(url);
+			points = getPointsFromArray(jsonArray, num);*/
+			//points = keeplinesIn(points, num, json);	
+			//points = verify.loadpoints(path, 0, num, datatype);
+		} else {
+			int end = num % 100;
+			int loop = num / 100 + end == 0 ? 0 : 1;
+			long before = 0;
+			long after = 0;
+			String bar = "bar=" + netInter(seconds);
+			url = "https://www.okx.com/api/v5/market/index-candles?instId=BTC-USD&bar=15m".replace("instId=BTC-USD", instId).replace("bar=15m", bar);
+			
+			json = getInfoFromNet(url);
+			jsonArray = json.getJSONArray("data");
+			url = url.replace("index-candles", "history-index-candles");
+			String urlHistory = url;
+			for (int i = 1; i <= loop; i++) {
+				before = System.currentTimeMillis() - 101 * (i + 1) * seconds * 1000;
+				after = System.currentTimeMillis() - 100 * i * seconds * 1000;
+				url = urlHistory + "&before=" + before + "&after=" + after;
+				json = getInfoFromNet(url);
+				jsonArray.putAll(json.getJSONArray("data"));
+			}
+			pack firstpoint = null;
+			for (int i = num - 1; i >= 0; i--) {
+				JSONArray pointArray = (JSONArray)jsonArray.get(i);
+				if (i == (num - 1)) {
+					firstpoint = new pack(pointArray);
+				}
+				if (i <= (num - 1)) {
+					pack point = new pack(pointArray);
+					point.minus(firstpoint, seconds * 1000 * 100, datatype);
+					points.add(point);
+				}
+			}
+		}
+		return points;
+	}
+	public static ArrayList<pack> loadpointsend(String path, int start, int end, int type) {
+		ArrayList<pack> points = new ArrayList<pack>();
+		try {
+			File pointfile = new File(path);
+			if (!pointfile.exists()) {
+				return points;
+			}
+			BufferedReader bt = new BufferedReader(new FileReader(path));
+			String alinet = null;
+			pack pointt = null;
+			ArrayList<pack> pointst = new ArrayList<pack>();
+			for (int i = 0; i < 5 && (alinet = bt.readLine()) != null; i++) {
+				if (i == 0) {
+					String[] xy = alinet.split(",");
+					pointt = new pack(Double.valueOf(xy[0]), 999999999);
+				}
+				if (i > 0) {
+					String[] xy = alinet.split(",");
+					pointt = new pack(Double.valueOf(xy[0]), Double.valueOf(xy[0]) - pointst.get(i - 1).getX());
+				}
+				pointst.add(pointt);
+			}
+			double min = 999999999;
+			for (int i = 0; i < pointst.size(); i++) {
+				if (min > pointst.get(i).getY()) {
+					min = pointst.get(i).getY();
+				}
+			}
+			int divide = (int)min * 100;
+			bt.close();
+			Thread.sleep(5);
+			BufferedReader br = new BufferedReader(new FileReader(path));
+			String aline = null;
+			pack firstpoint = null;
+			for (int i = 0; i < end && (aline = br.readLine()) != null; i++) {
+				if (i == start) {
+					String[] xy = aline.split(",");
+					firstpoint = new pack(Double.valueOf(xy[0]),
+							"None".equals(xy[1]) ? 0 : Double.valueOf(xy[1]));
+				}
+				if (i >= start) {
+					String[] xy = aline.split(",");
+					pack point = new pack(Double.valueOf(xy[0]),
+							Double.valueOf("None".equals(xy[1]) ? 0 : Double.valueOf(xy[1])));
+					point.minus(firstpoint, divide, type);
+					points.add(point);
+				}
+			}
+			br.close();
+			Thread.sleep(5);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -265,10 +557,93 @@ public class verify {
 				points.add(point);
 			}
 			br.close();
+			Thread.sleep(5);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return points;
+	}
+	public static String loadparam(String path, String field) {
+		String result = "";
+		try {
+			File pointfile = new File(path);
+			if (!pointfile.exists()) {
+				return "";
+			}
+			BufferedReader br = new BufferedReader(new FileReader(path));
+			String aline = null;
+			for (int i = 0; (aline = br.readLine()) != null; i++) {
+				result += aline;
+			}
+			br.close();
+			Thread.sleep(5);
+			JSONObject jsonObject = new JSONObject(result);
+			result = jsonObject.getString(field);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+	public static String loadparam(String path) {
+		String result = "";
+		try {
+			File pointfile = new File(path);
+			if (!pointfile.exists()) {
+				return "";
+			}
+			BufferedReader br = new BufferedReader(new FileReader(path));
+			String aline = null;
+			for (int i = 0; (aline = br.readLine()) != null; i++) {
+				result += aline;
+			}
+			br.close();
+			Thread.sleep(5);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+	public static JSONObject loadObject(String path) {
+		String result = "";
+		JSONObject jsonObject = null;
+		try {
+			File pointfile = new File(path);
+			if (!pointfile.exists()) {
+				return jsonObject;
+			}
+			BufferedReader br = new BufferedReader(new FileReader(path));
+			String aline = null;
+			for (int i = 0; (aline = br.readLine()) != null; i++) {
+				result += aline;
+			}
+			br.close();
+			Thread.sleep(5);
+			jsonObject = new JSONObject(result);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return jsonObject;
+	}
+	public static JSONArray loadArray(String path) {
+		String result = "";
+		JSONArray jsonObject = null;
+		try {
+			File pointfile = new File(path);
+			if (!pointfile.exists()) {
+				return jsonObject;
+			}
+			BufferedReader br = new BufferedReader(new FileReader(path));
+			String aline = null;
+			for (int i = 0; (aline = br.readLine()) != null; i++) {
+				result += aline;
+			}
+			br.close();
+			Thread.sleep(5);
+			jsonObject = new JSONArray(result);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return jsonObject;
 	}
 
 	public static void saveparam(String path, String param) {
@@ -279,7 +654,8 @@ public class verify {
 					pythonparam.getAbsoluteFile()));
 			python.write(param);
 			python.close();
-		} catch (IOException e) {
+			Thread.sleep(5);
+		} catch (IOException | InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -301,7 +677,8 @@ public class verify {
 				bw.write(content);
 			}
 			bw.close();
-		} catch (IOException e) {
+			Thread.sleep(5);
+		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
@@ -321,7 +698,8 @@ public class verify {
 				bw.write(content);
 			}
 			bw.close();
-		} catch (IOException e) {
+			Thread.sleep(5);
+		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
@@ -333,7 +711,8 @@ public class verify {
 					file.getAbsoluteFile(), true));
 			bw.append(content);
 			bw.close();
-		} catch (IOException e) {
+			Thread.sleep(5);
+		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
 		return content;

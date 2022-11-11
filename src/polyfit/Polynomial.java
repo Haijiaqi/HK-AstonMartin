@@ -24,12 +24,13 @@ public class Polynomial {
 	double max = 0;
 
 	double min = 0;
+	double most = 0;
 
 	double averageU = 0;
 	double averageD = 0;
 
 	double[] zero = {};
-
+	double datascale = 100;
 	Map<Integer, Double> probabilitydensityfunction;
 
 	public ArrayList<pack> rawdata = new ArrayList<pack>();
@@ -48,6 +49,28 @@ public class Polynomial {
 			double[] init = { -Double.MAX_VALUE, Double.MAX_VALUE };
 			this.domain.add(init);
 		}
+	}
+	public Polynomial(double y) {
+		r = new RhoFunction();
+		if (this.x.size() < 1) {
+			double[][] intro = { { y } };
+			Matrix startStone = new Matrix(intro);
+			this.x.add(startStone);
+			double[] init = { -Double.MAX_VALUE, Double.MAX_VALUE };
+			this.domain.add(init);
+		}
+	}
+	public Polynomial(double start, double y) {
+		r = new RhoFunction();
+		if (this.x.size() < 1) {
+			double[][] intro = { { 0 } };
+			Matrix startStone = new Matrix(intro);
+			this.x.add(startStone);
+			double[] init = { -Double.MAX_VALUE, Double.MAX_VALUE };
+			this.domain.add(init);
+		}
+		double[][] consts = { { y } };
+		addAnalyticFormulaInOrder(new Matrix(consts), start);
 	}
 
 	public Map<Integer, Integer> analysis(ArrayList<pack> points,
@@ -81,7 +104,10 @@ public class Polynomial {
 				if (y > max) {
 					max = y;
 				}
-				sample = (int) Math.round(points.get(i).getY());
+			}
+			datascale = digit(Math.abs(max) > Math.abs(min) ? Math.abs(max) : Math.abs(min));
+			for (int i = 0; i < points.size(); ++i) {
+				sample = (int) Math.round(points.get(i).getY() / datascale);
 				if (statistic.containsKey(sample)) {
 					statistic.put(sample, statistic.get(sample) + 1);
 				} else {
@@ -111,9 +137,16 @@ public class Polynomial {
 				this.averageD = 0;
 			}
 			probabilitydensityfunction = new TreeMap<Integer, Double>();
+			double value = Double.NEGATIVE_INFINITY;
+			double prevalue = Double.NEGATIVE_INFINITY;
 			for (int key : statistic.keySet()) {
-				probabilitydensityfunction.put(key, (double) statistic.get(key)
-						/ points.size());
+				value = (double) statistic.get(key)
+				/ points.size();
+				probabilitydensityfunction.put(key, value);
+				if (value > prevalue) {
+					most = key * datascale;
+				}
+				prevalue = value;
 			}
 			int mapKey = 0;
 			int mapValue = 0;
@@ -138,6 +171,19 @@ public class Polynomial {
 			e.printStackTrace();
 		}
 		return statistic;
+	}
+	public double digit(double num) {
+		int result = 0;
+		double numt = num;
+		numt *= 100;
+		for (int i = -2; i < 10; i++) {
+			numt = numt / 10;
+			if (numt < 1) {
+				result = i;
+				break;
+			}
+		}
+		return Math.pow(10, result - 1);
 	}
 
 	// 计算回到同样高水平所需的最长时间间隔及相关信息
@@ -239,7 +285,7 @@ public class Polynomial {
 	public double evaltoprate(double in) {
 		double probability = 0;
 		try {
-			Integer inint = (int) Math.round(in);
+			Integer inint = (int) Math.round(in / datascale);
 			probability = 0;
 			/*for (int key : probabilitydensityfunction.keySet()) {
 				if (inint >= key) {// 比百分之多少大
@@ -1135,7 +1181,7 @@ public class Polynomial {
 		if ((end - start) / interval > 1000 * 1000 * 10) {
 			return 2;
 		}
-		for (double i = start; i <= end; i += interval) {
+		for (double i = start; i <= end + interval; i += interval) {
 			result += String.format("%.3f", i) + ","
 					+ String.format("%.3f", f(i, 0)) + "\n";
 		}
@@ -1145,7 +1191,7 @@ public class Polynomial {
 	public int display(int paint) {
 		if (paint > 0) {
 			try {
-				paintCurve(Framework.basepath + "/function.txt", (end - start) / 50);//pack.interval * 50);
+				paintCurve(Framework.getPath("coin", "paint", "function"), (end - start) / 50);//pack.interval * 50);
 				String command = "python3 " + Framework.basepath + "/fastpaint.py";
 				System.out.println(command);
 				Process pr = Runtime.getRuntime().exec(command);

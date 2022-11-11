@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt 
 import numpy as np
 import os
+import demjson
 def loadparam(path):
     fp = open(path, 'r')
     for aline in fp:
@@ -13,6 +14,13 @@ def loadparam(path):
         tab = params[1]
     fp.close()
     return path, tab
+def loadobj(path):
+    fp = open(path, 'r')
+    params = ''
+    for aline in fp:
+        params += aline
+    fp.close()
+    return demjson.decode(params)
 
 def getXY(path, outsize):
     x = []
@@ -55,9 +63,10 @@ def getXYp(path, outsize, divide):
 
 
 def main():
-    basepath = os.getcwd() + '/'
+    basepath = os.getcwd() + '/work/coin/paint/'
+    params = loadobj(basepath + "processInfo.txt")
     print(basepath)
-    path, tab = loadparam(basepath + "pythonparam.txt")
+    tab, path = loadparam(basepath + "pythonparam.txt")
     x = []
     y = []
     x, y = getXY(basepath + "rawdata.txt", 1000)
@@ -80,7 +89,7 @@ def main():
     '''a=np.polyfit(x[-recentnum:-1],y[-recentnum:-1],risklevel)#用2次多项式拟合x，y数组
     b=np.poly1d(a)#拟合完之后用这个函数来生成多项式对象
     c=b(x[-recentnum:-1])#生成多项式对象之后，就是获取x在这个多项式处的值'''
-    plt.figure(figsize=(6, 3))#, top=0, right=1)
+    fig = plt.figure(figsize=(4, 2))#, top=0, right=1)
     #plt.scatter(x,y,marker='.',label='raw')#对原始数据画散点图
     plt.plot(x,y,color="black")
     plt.scatter(fitx,fity,marker='.',label=tab)#对近期拟合画散点图
@@ -91,6 +100,8 @@ def main():
     #plt.plot(x[-recentnum:-1],c,ls='--',c='red',label='fitting')#对拟合之后的数据，也就是x，c数组画图
     plt.legend()
     # plt.margins(x=0, y=0)
-    plt.show()
+    plt.draw()
+    plt.pause(params['nd'] - 2)
+    plt.close(fig)
 
 main()
