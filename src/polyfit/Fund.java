@@ -51,6 +51,7 @@ public class Fund {
 	ArrayList<pack> cubicpoints = new ArrayList<pack>();
 	ArrayList<pack> quadraticubicpoints = new ArrayList<pack>();
 	ArrayList<pack> evalpoints = new ArrayList<pack>();
+	ArrayList<pack> peakpoints = new ArrayList<pack>();
 
 	// public Fund(String[] information, ArrayList<pack> points) {
 	// 	givedata(information, points);
@@ -88,6 +89,27 @@ public class Fund {
 		risklevel = risklevel > pack.maxorder ? pack.maxorder : risklevel;
 		macroscopic();
 		microcosmic();
+		if (paint > 0) {
+			try {
+				Process pr = Runtime.getRuntime().exec("python " + Framework.basepath + "/canpaintin20210702.py");
+				Thread.sleep(paint);
+			} catch (InterruptedException | IOException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	public Fund(String[] information, ArrayList<pack> points, int paint) {
+		this.points = points;
+		this.information = information;
+		this.points = points;
+		this.paint = paint;
+		code = Framework.safeget(information, 0);
+		name = Framework.safeget(information, 1);
+		macroscopic();
+		extractindex(false);
 		if (paint > 0) {
 			try {
 				Process pr = Runtime.getRuntime().exec("python " + Framework.basepath + "/canpaintin20210702.py");
@@ -676,7 +698,14 @@ public class Fund {
 			System.out.println("immediateriskdn: " + (-(immediaterisk - 2)) + ", " + Erate);
 			conclusion = reliability * Erate / (1 + fee);
 		}
-		//Erate *= Erate == -1 ? 1 : getdiscount(Erate, lastpointtoprate, pack.discountRate);
+		if (Erate > -1 && Erate < 0 ) {
+			Erate *= getdiscount(Erate, lastpointtoprate, pack.discountRate);
+			if (Erate < -1) {
+				Erate = -0.999;
+			}
+		} else {
+			Erate *= getdiscount(Erate, lastpointtoprate, pack.discountRate);
+		}
 		if (paint > 0) {
 			String pythonconfig = Framework.getPath("coin", "paint", "pythonparam");
 			verify.saveparam(pythonconfig, "");
@@ -769,11 +798,17 @@ public class Fund {
 
 	// 偏离标准程度的量化器double sign二值信号, double lasttoprate末点水位, double standard低水位标准
 	public double getdiscount(double sign, double lasttoprate, double standard) {
+		double result = 0;
+		double anti = standard / 10;
+		double antirate = standard * anti;
 		if (sign > 0) {
 			// 如果判升
 			//if (lasttoprate > standard) {
 				// 高于低水位，补段除以水位线补段
-				return (1 - lasttoprate) / (standard);
+			if (lasttoprate < anti) {
+				return lasttoprate / (antirate);
+			}
+			return (1 - lasttoprate) / (standard);
 			/*} else {
 				// 低于低水位，置信升率为1
 				return 1; // (standard - lasttoprate) / (standard);
@@ -782,7 +817,10 @@ public class Fund {
 			// 如果判降
 			//if (lasttoprate < (1 - standard)) {
 				// 低于低水位的对称线，本段除以低水位补长度
-				return lasttoprate; // (lasttoprate - standard)
+			if (lasttoprate > (1 - anti)) {
+				return (1 - lasttoprate) / (antirate);
+			}
+			return lasttoprate / (standard); // (lasttoprate - standard)
 														// / (1 - standard);
 			/*} else {
 				// 高于低水位的对称线，置信降率为1

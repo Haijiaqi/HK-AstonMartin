@@ -421,14 +421,14 @@ public class verify {
 		newpointst.add(new pack(json));
 		return newpointst;
 	}
-	public static ArrayList<pack> getData(boolean addORall, String type, int seconds, int num, int datatype) {
+	public static ArrayList<pack> getData(boolean addORall, String type, int seconds, int num, int datatype, String temppath) {
 		ArrayList<pack> points = new ArrayList<pack>();
 		String instId = "instId=" + type;
 		String url = "";
 		JSONObject json = null;
 		JSONArray jsonArray = null;
 		if (addORall) {
-			String path = Framework.getPath("coin", "seconds", type);
+			String path = Framework.getPath("coin", temppath, type);
 			ArrayList<String> lines = new ArrayList<>();
 			lines = loadlines(path, 0, num);
 			url = "https://www.okx.com/api/v5/market/index-tickers?instId=BTC-USD".replace("instId=BTC-USD", instId);
@@ -465,8 +465,10 @@ public class verify {
 			url = url.replace("index-candles", "history-index-candles");
 			String urlHistory = url;
 			for (int i = 1; i <= loop; i++) {
-				before = System.currentTimeMillis() - 101 * (i + 1) * seconds * 1000;
-				after = System.currentTimeMillis() - 100 * i * seconds * 1000;
+				long top = new Long((i + 1) * seconds);
+				long tail = new Long((i) * seconds);
+				before = System.currentTimeMillis() - 101 * top * 1000;
+				after = System.currentTimeMillis() - 100 * tail * 1000;
 				url = urlHistory + "&before=" + before + "&after=" + after;
 				json = getInfoFromNet(url);
 				jsonArray.putAll(json.getJSONArray("data"));

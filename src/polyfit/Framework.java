@@ -255,7 +255,7 @@ public class Framework {
 		Investment.amount = (coefficient - 1) * 20000;
 	}
 
-	public static void runseconds(JSONArray coins, int seconds) {
+	public static void runhours(JSONArray coins, int seconds) {
 		for (int j = 0; j < coins.length(); j++) {
 			JSONObject obj = coins.getJSONObject(j);
 			Polynomial start = new Polynomial(1);
@@ -268,28 +268,29 @@ public class Framework {
 			String newNAVstring = Framework.getInfoFromJson(upper, "newNAV", ":");
 			double amount = Double.parseDouble(obj.getString("amount"));
 			int extrapolation = obj.optInt("extrapolation");
-			String infomation = processAfund(info, seconds, 120, order, extrapolation, start, Erate > 0 ? 1 : -1, amount * Erate, "", paint);
+			String infomation = processAfund(info, seconds, 120, order, extrapolation, 0, Erate > 0 ? 1 : -1, amount * Erate, "", paint);
 			String trade = Framework.produceTradeItem(infomation);
 			executeOnline(trade, newNAVstring);
 		}
 	}
-	public static void runminutes(JSONArray coins, int seconds) {
+	public static void runseconds(JSONArray coins, int seconds) {
 		for (int j = 0; j < coins.length(); j++) {
 			JSONObject obj = coins.getJSONObject(j);
-			ArrayList<pack> structs = Fund.parsePoints(obj.getString("struct"));
+			/*ArrayList<pack> structs = Fund.parsePoints(obj.getString("struct"));
 			Polynomial p = new Polynomial();
 			p.processLS(structs, 2);
 			Polynomial start = new Polynomial(2);
 			start.assemble(p, 1);
 			Polynomial zero = new Polynomial(structs.get(structs.size() - 1).x, 0);
-			start.assemble(zero, 1);
+			start.assemble(zero, 1);*/
 			//start.display(1000);
 			String[] info = { obj.getString("type"), obj.getString("name") };
 			double order = obj.optDouble("order");
 			double amount = obj.optDouble("amount");
+			double outrate = obj.optDouble("struct");
 			int paint = obj.optInt("paint");
 			int extrapolation = obj.optInt("extrapolation");
-			String infomation = processAfund(info, seconds, 120, order, extrapolation, start, 0, amount, Framework.getPath("coin", "minutes", info[0]), paint);
+			String infomation = processAfund(info, seconds, 120, order, extrapolation, outrate, 0, amount, "", paint);
 			if (!"".equals(infomation)) {
 				String newNAVstring = Framework.getInfoFromJson(infomation, "newNAV", ":");
 				String trade = Framework.produceTradeItem(infomation);
@@ -297,24 +298,46 @@ public class Framework {
 			}
 		}
 	}
-	public static void runhours(JSONArray coins, int second) {
+	public static void runminutes(JSONArray coins, int seconds) {
+		boolean ifsave = false;
 		for (int j = 0; j < coins.length(); j++) {
+			JSONObject obj = coins.getJSONObject(j);
+			String[] info = { obj.getString("type"), obj.getString("name") };
+			ArrayList<pack> points = null;
+			points = verify.getData(seconds < 60, info[0], seconds, 120, -1, "minutes");	
+			if (points == null) {
+				System.out.println(info[0] + " loading from net!");
+				continue;
+			}
+			if (!ifsave) {
+				ifsave = true;
+			}
+			Fund aFund = new Fund();
+			aFund.polynomial_all.process(points, aFund.risklevel, 1, 0);
+			double toprate = aFund.polynomial_all.evaltoprate(points.get(points.size() - 1).getY());
+			double Erate = aFund.getdiscount(1, toprate, pack.discountRate);
+			obj.put("struct", Erate);
 			/* 1\getdatafromnet
 			 * 2\runestimate
 			 * 3\trade
 			 */
 		}
+		if (ifsave) {
+			System.out.println("new co save!");
+			String path = Framework.getPath("coin", "paint", "list");
+			verify.saveparam(path, coins.toString());
+		}
 	}
-	public static String processAfund(String[] type, int seconds, int num, double order, int extrapolation, Polynomial f, int gate, double amount, String path, int paint) {
+	public static String processAfund(String[] type, int seconds, int num, double order, int extrapolation, double f, int gate, double amount, String outpath, int paint) {
 		ArrayList<pack> points = null;
-		points = verify.getData(seconds < 60, type[0], seconds, num, -1);	
+		points = verify.getData(seconds < 60, type[0], seconds, num, -1, seconds <= 60 ? "seconds" : "minutes");	
 		if (points == null) {
 			return "";
 		}
-		//points = verify.loadpoints(Framework.getPath("coin", "paint", "rawdata"), 0, 150, -1);	
-		Fund afund = new Fund(type, points, order, paint, extrapolation, f.f(points.get(points.size() - 1).val, 0), amount, gate);
-		if (!"".equals(path)) {
-			verify.saveparam(path, afund.outString + "\n");
+		//points = verify.loadpoints(Framework.getPath("coin", "paint", "rawdata"), 0, 150, -1);	.f(points.get(points.size() - 1).val, 0)
+		Fund afund = new Fund(type, points, order, paint, extrapolation, f, amount, gate);
+		if (!"".equals(outpath)) {
+			verify.saveparam(outpath, afund.outString + "\n");
 		}
 		return afund.outString;
 	}

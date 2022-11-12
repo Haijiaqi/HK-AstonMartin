@@ -24,7 +24,14 @@ public class Polynomial {
 	double max = 0;
 
 	double min = 0;
+	double realmax = 0;
+
+	double realmin = 999999999;
 	double most = 0;
+	double Most = 0;
+	double rightnode = 0;
+
+	double leftnode = 0;
 
 	double averageU = 0;
 	double averageD = 0;
@@ -39,6 +46,7 @@ public class Polynomial {
 
 	pack worse = new pack();
 	pack imum;
+	ArrayList<pack> peakPoints = new ArrayList<>();
 
 	public Polynomial() {
 		r = new RhoFunction();
@@ -50,6 +58,7 @@ public class Polynomial {
 			this.domain.add(init);
 		}
 	}
+
 	public Polynomial(double y) {
 		r = new RhoFunction();
 		if (this.x.size() < 1) {
@@ -60,6 +69,7 @@ public class Polynomial {
 			this.domain.add(init);
 		}
 	}
+
 	public Polynomial(double start, double y) {
 		r = new RhoFunction();
 		if (this.x.size() < 1) {
@@ -141,7 +151,7 @@ public class Polynomial {
 			double prevalue = Double.NEGATIVE_INFINITY;
 			for (int key : statistic.keySet()) {
 				value = (double) statistic.get(key)
-				/ points.size();
+						/ points.size();
 				probabilitydensityfunction.put(key, value);
 				if (value > prevalue) {
 					most = key * datascale;
@@ -172,6 +182,102 @@ public class Polynomial {
 		}
 		return statistic;
 	}
+
+	public ArrayList<pack> specialanalysis(ArrayList<pack> points, int more) {
+		//TreeMap<Integer, Integer> statistic = null;
+		try {
+			int length = points.size();
+			int partsnum = (int) Math.sqrt(length / 2);
+			double val = 0;
+			for (int i = 0; i < points.size(); ++i) {// pack pack : points) {
+				val = points.get(i).val;
+				if (val < realmin) {
+					realmin = val;
+				}
+				if (val > realmax) {
+					realmax = val;
+				}
+			}
+			// double[] ends = new double[partsnum + 1];
+			int tail = more;// < 1 ? 1 : more;
+			int twotail = tail * 2;
+			double[] tags = new double[partsnum + twotail];
+			double[] num = new double[partsnum + twotail];
+			double inter = (realmax - realmin) / (partsnum - 1);
+			double halfinter = inter / 2;
+			// ends[0] = realmin;
+			int order = (num.length) / 2 * 2 - 2;
+			double rate = (length) / partsnum * (Math.sqrt(order * 2));
+			if (tail == 0) {
+				tags[0] = realmin;
+				num[0] = 0;
+				for (int i = tail + 1; i < num.length; i++) {
+					int pre = i - 1;
+					// ends[i] = ends[pre] + inter;
+					tags[i] = tags[pre] + inter;
+					num[i] = 0;
+				}
+			} else {
+				for (int i = 0; i < tail; i++) {
+					num[i] = (tail - i) * rate;
+					tags[i] = realmin - (tail - i) * inter;
+				}
+				for (int i = tail; i < num.length; i++) {
+					int pre = i - 1;
+					// ends[i] = ends[pre] + inter;
+					tags[i] = tags[pre] + inter;
+					num[i] = 0;
+				}
+				for (int i = num.length - 1; i >= num.length - 1 - tail + 1; i--) {
+					num[i] = (i - (num.length - 1 - tail)) * rate;
+				}
+			}
+			for (int i = 0; i < points.size(); ++i) {
+				val = points.get(i).val;
+				int idx = (int) ((val - (realmin - halfinter)) / inter) + tail;
+				num[idx]++;
+			}
+			ArrayList<pack> innerPoints = new ArrayList<>();
+			for (int i = 0; i < num.length; i++) {
+				innerPoints.add(new pack(i, num[i]));
+			}
+			Polynomial inpoly = new Polynomial();
+			inpoly.processLS(innerPoints, (order));//, 1, 0);
+			inpoly.display(1000);
+			Polynomial inpoly_1 = inpoly.d(1);// ~^~
+			//inpoly_1.display(1000);
+			Polynomial inpoly_11 = inpoly_1.d(1);// -\-
+			//inpoly_11.display(1000);
+			double[] zero = inpoly_1.findzeropoint();
+			//Polynomial inpoly_111 = inpoly_11.d(1);// (x)
+			//inpoly_111.display(1000);
+			peakPoints = new ArrayList<>();
+			double node = 0;
+			for (int i = 0; i < zero.length; i++) {
+				double o = zero[i];
+				double v = inpoly_11.f(o, 0);
+				if (o > tail + 1 && o < num.length - tail - 1 && v < 0) {
+					node = tags[0] + o * inter;
+					peakPoints.add(new pack(node, inpoly.f(o, 0)));
+				}
+			}
+			/*double innerrightnode = 0;
+			for (int i = zero.length - 1; i > -1; i--) {
+				double v = inpoly_111.f(zero[i], 0);
+				if (v > 0) {
+					innerrightnode = zero[i];
+					break;
+				}
+			}
+			leftnode = tags[0] + innerleftnode * inter;
+			rightnode = tags[0] + innerrightnode * inter;*/
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return peakPoints;
+	}
+
 	public double digit(double num) {
 		int result = 0;
 		double numt = num;
@@ -230,7 +336,8 @@ public class Polynomial {
 				worse.value = stablity;
 			}
 			// 计算跨度占整个长度的比例，也作为一个指标，接近1就要注意了
-			worse.r = worse.value / pack.totalInterval; // points.get(points.size() - 1).getX() - points.get(0).getX(); //
+			worse.r = worse.value / pack.totalInterval; // points.get(points.size() - 1).getX() - points.get(0).getX();
+														// //
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -287,16 +394,18 @@ public class Polynomial {
 		try {
 			Integer inint = (int) Math.round(in / datascale);
 			probability = 0;
-			/*for (int key : probabilitydensityfunction.keySet()) {
+			for (int key : probabilitydensityfunction.keySet()) {
 				if (inint >= key) {// 比百分之多少大
 					probability += probabilitydensityfunction.get(key);
 				} else {
 					break;
 				}
-			}*/
+			}
+			/*
 			if (in > min) {
 				probability = (in - min) / (max - min);
 			}
+			 */
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -345,17 +454,17 @@ public class Polynomial {
 					// Matrix tempx = leastsquare(B, l).getMatrix();
 					if (type == 0) {
 						addAnalyticFormulaInOrder(leastsquare(B, l).getMatrix(),
-								start);						
+								start);
 					} else {
 						addAnalyticFormulaInOrder(robustestimition(B, l)
-						.getMatrix(), start);
+								.getMatrix(), start);
 					}
 					realy = rawdata.get(rawdata.size() - 1).getY();
 					estimatey = this.f(rawdata.get(rawdata.size() - 1).getX(), 0);
 					if (Math.abs(estimatey - realy) < 2 * (max - min)) {
 						Polynomial pi = this.d(1);
 						// if (pi.x.size() == 1) {
-						// 	pi = this.d(1);
+						// pi = this.d(1);
 						// }
 						pi.findzeropoint();
 						if (pi.zero.length + 1 == i) {
@@ -386,6 +495,7 @@ public class Polynomial {
 		}
 		return this.x.get(this.x.size() - 1);
 	}
+
 	public Matrix processLS(ArrayList<pack> points, int order) {
 		try {
 			analysis(points, false);
@@ -403,7 +513,7 @@ public class Polynomial {
 				if (order == 2) {
 					imum = getimum(this.x.size() - 1);
 				} else {
-					//System.err.println("需要拟合" + order);
+					// System.err.println("需要拟合" + order);
 				}
 			} else {
 				System.err.println("需要拟合" + order + "次函数，但你只给了" + points.size()
@@ -442,7 +552,7 @@ public class Polynomial {
 				if (order == 2) {
 					imum = getimum(this.x.size() - 1);
 				} else {
-					//System.err.println("需要拟合" + order);
+					// System.err.println("需要拟合" + order);
 				}
 				if (extrapolations > 0) {
 					rawdata = points;
@@ -551,6 +661,7 @@ public class Polynomial {
 		}
 		return newPoint;
 	}
+
 	public ArrayList<pack> extrapolations(double interval, int n) {
 		try {
 			double lastx = rawdata.get(rawdata.size() - 1).getX();
@@ -778,9 +889,11 @@ public class Polynomial {
 			// 要使左短右长、只有右的线提前结束，从而留下有积分意义的线
 			boolean re = false;
 			if (this.x.get(xIndex).get(0, 0) * (rightY - leftY) >= 0) {
-				/*result.setX(0);
-				result.setY(0);
-				return result;*/
+				/*
+				 * result.setX(0);
+				 * result.setY(0);
+				 * return result;
+				 */
 				re = true;
 			} else {
 				if (imum.y == 0) {
@@ -848,14 +961,16 @@ public class Polynomial {
 				}
 				if (order == 0.5) {
 					double midx = (known.getX() + mirror.getX()) / 2;
-					pack midLeft = new pack(midx - width, height - (this.f(this.x.get(1).getArray(), midx) - imumHeight));
+					pack midLeft = new pack(midx - width,
+							height - (this.f(this.x.get(1).getArray(), midx) - imumHeight));
 					midx = (known.getX() + imum.getX()) / 2;
-					pack midRight = new pack(midx + width, height - (this.f(this.x.get(1).getArray(), midx) - imumHeight));
+					pack midRight = new pack(midx + width,
+							height - (this.f(this.x.get(1).getArray(), midx) - imumHeight));
 					leftPoints.add(midLeft);
 					rightPoints.add(midRight);
 				}
-				leftPolynomial.processLS(leftPoints, order == 0.5 ? 2 : (int)order);
-				rightPolynomial.processLS(rightPoints, order == 0.5 ? 2 : (int)order);
+				leftPolynomial.processLS(leftPoints, order == 0.5 ? 2 : (int) order);
+				rightPolynomial.processLS(rightPoints, order == 0.5 ? 2 : (int) order);
 				if (leftPolynomial.start < rightPolynomial.start) {
 					function0.assemble(leftPolynomial, 1);
 					function0.assemble(rightPolynomial, 1);
@@ -866,9 +981,9 @@ public class Polynomial {
 			}
 			// 积分
 			Polynomial function1 = function0.s(1);
-			//function0.display(5000);
-			//function1.display(5000);
-			//this.display(5000);
+			// function0.display(5000);
+			// function1.display(5000);
+			// this.display(5000);
 			// 对积分函数求拟合域（拟合原函数所用的点的区域）上的总积分值
 			double integral = function1.f(function1.end, 0)
 					- function1.f(function1.start, 0);
@@ -884,9 +999,9 @@ public class Polynomial {
 				needinter = rate * realinter;
 				x = start + needinter;
 			}
-			double ready = (function1.f(x, 0) - function1.f(zero, 0))/ (Math.abs(integral) / 1.666667);
+			double ready = (function1.f(x, 0) - function1.f(zero, 0)) / (Math.abs(integral) / 1.666667);
 			ready = Math.abs(ready) > 1 ? Math.signum(ready) : ready;
-			double weight = total * (function1.f(x, 0) - function1.f(start, 0))/ Math.abs(integral);
+			double weight = total * (function1.f(x, 0) - function1.f(start, 0)) / Math.abs(integral);
 			result.setX(weight);
 			result.setY(ready);
 		}
@@ -1009,14 +1124,14 @@ public class Polynomial {
 				}
 			}
 			continution.add(rawdata.get(rawdata.size() - 1));
-			
+
 			startIndex = 0;
 			dXminPoint = 100000;
 			for (int i = 0; i < continution.size(); i++) {
 				// double dX = start - continution.get(i).getX();
 				double dX = Math.abs(start - continution.get(i).getX());
 				if (dX <= dXminPoint) {
-				// if (dX <= dXminPoint && dX > 0) {
+					// if (dX <= dXminPoint && dX > 0) {
 					startIndex = i;
 					dXminPoint = dX;
 				}
@@ -1030,6 +1145,7 @@ public class Polynomial {
 		}
 		return result;
 	}
+
 	public static ArrayList<pack> interpolation(pack pointStart, pack pointEnd) {
 		ArrayList<pack> points = new ArrayList<pack>();
 		double gradient = (pointEnd.getY() - pointStart.getY()) / (pointEnd.getX() - pointStart.getX());
@@ -1040,7 +1156,7 @@ public class Polynomial {
 				double x = bgx.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
 				BigDecimal bgy = new BigDecimal(pointStart.getY() + i * pack.interval * gradient);
 				double y = bgy.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
-				pack newPack = new pack(x,  y);
+				pack newPack = new pack(x, y);
 				points.add(newPack);
 			} else {
 				break;
@@ -1188,10 +1304,11 @@ public class Polynomial {
 		verify.saveparam(path, result);
 		return 0;
 	}
+
 	public int display(int paint) {
 		if (paint > 0) {
 			try {
-				paintCurve(Framework.getPath("coin", "paint", "function"), (end - start) / 50);//pack.interval * 50);
+				paintCurve(Framework.getPath("coin", "paint", "function"), (end - start) / 50);// pack.interval * 50);
 				String command = "python3 " + Framework.basepath + "/fastpaint.py";
 				System.out.println(command);
 				Process pr = Runtime.getRuntime().exec(command);
