@@ -904,9 +904,9 @@ public class Polynomial {
 			// »ñÈ¡×ó¶Ëµã
 			pack known;
 			if (re) {
-				zero = x;
-				x = rawdata.get(0).getX();
-				start = x - (start - zero);
+				zero = start;
+				start = rawdata.get(0).getX();
+				x = start - (x - zero);
 				known = new pack(rawdata.get(rawdata.size() - 1).getX(), rightY);
 			} else {
 				known = new pack(rawdata.get(0).getX(), leftY);
@@ -997,7 +997,10 @@ public class Polynomial {
 				rate = realhalf / (radix / 2);
 				realinter = x - start;
 				needinter = rate * realinter;
-				start = x - needinter;
+				x = start + needinter;
+			}
+			if ((x - function1.start) * (x - function1.end) > 0) {
+				x = start;
 			}
 			double ready = (function1.f(x, 0) - function1.f(zero, 0)) / (Math.abs(integral) / 1.333333);
 			ready = Math.abs(ready) > 1 ? Math.signum(ready) : ready;

@@ -435,7 +435,7 @@ public class Fund {
 			fundamental, 1, 0.5).getX();*/
 
 			quadratic.processR(quadraticpoints, 2, extrapolations);
-			weight = quadratic.getStringWeight(x, x - pack.interval, order,
+			weight = quadratic.getStringWeight(x + pack.interval, x, order,
 					fundamental, 1, 0.5); 
 			result.value = weight.getX();
 			// result.r = pack.stagesweight[0] * result.x + pack.stagesweight[1] * result.value + pack.stagesweight[2] * result.y;

@@ -149,7 +149,8 @@ public class Investment {
 			double nowCash = gettotalcash(investments);
 			double deltaCost = preCost - nowCost;
 			double deltaCash = nowCash - preCash;
-			System.out.println(" " + preCost + " " + nowCost + " " + preCash + " " + nowCash);
+			deltaCost = deltaCost == 0 ? 1 : deltaCost;
+			System.out.println(" " + preCost + " " + nowCost + " " + nowCash + " " + preCash);
 			String path = Framework.getPath("coin", "paint", "processInfo");
 			JSONObject param = verify.loadObject(path);
 			//path = Framework.getPath("coin", "paint", "listInfo");
