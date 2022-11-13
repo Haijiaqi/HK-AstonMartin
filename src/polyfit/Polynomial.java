@@ -392,6 +392,7 @@ public class Polynomial {
 	public double evaltoprate(double in) {
 		double probability = 0;
 		try {
+			/*
 			Integer inint = (int) Math.round(in / datascale);
 			probability = 0;
 			for (int key : probabilitydensityfunction.keySet()) {
@@ -401,11 +402,10 @@ public class Polynomial {
 					break;
 				}
 			}
-			/*
+			 */
 			if (in > min) {
 				probability = (in - min) / (max - min);
 			}
-			 */
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -997,13 +997,16 @@ public class Polynomial {
 				rate = realhalf / (radix / 2);
 				realinter = x - start;
 				needinter = rate * realinter;
-				x = start + needinter;
+				start = x - needinter;
 			}
-			double ready = (function1.f(x, 0) - function1.f(zero, 0)) / (Math.abs(integral) / 1.666667);
+			double ready = (function1.f(x, 0) - function1.f(zero, 0)) / (Math.abs(integral) / 1.333333);
 			ready = Math.abs(ready) > 1 ? Math.signum(ready) : ready;
 			double weight = total * (function1.f(x, 0) - function1.f(start, 0)) / Math.abs(integral);
 			result.setX(weight);
 			result.setY(ready);
+			if (result.getX() * result.getY() < 0) {
+				System.out.println("wrong weight! " + result.toString());
+			}
 		}
 		return result;
 	}

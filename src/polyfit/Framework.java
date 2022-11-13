@@ -273,7 +273,7 @@ public class Framework {
 			executeOnline(trade, newNAVstring);
 		}
 	}
-	public static void runseconds(JSONArray coins, int seconds) {
+	public static void runseconds(JSONArray coins, JSONObject param, int seconds) {
 		for (int j = 0; j < coins.length(); j++) {
 			JSONObject obj = coins.getJSONObject(j);
 			/*ArrayList<pack> structs = Fund.parsePoints(obj.getString("struct"));
@@ -285,12 +285,22 @@ public class Framework {
 			start.assemble(zero, 1);*/
 			//start.display(1000);
 			String[] info = { obj.getString("type"), obj.getString("name") };
-			double order = obj.optDouble("order");
+			JSONObject recordInfo = null;
+			JSONArray coinsInfo = param.getJSONArray("coins");
+			for (int i = 0; i < coinsInfo.length(); i++) {
+				recordInfo = coinsInfo.getJSONObject(i);
+				if (info[0].equals(recordInfo.getString("type"))) {
+					break;
+				}
+			}
+			double order = recordInfo.optDouble("order");
+			double outrate = recordInfo.optDouble("struct");
+			double start = recordInfo.optDouble("start");
+			outrate = outrate > 2 ? 0 : outrate;
+			int extrapolation = recordInfo.optInt("extrapolation");
 			double amount = obj.optDouble("amount");
-			double outrate = obj.optDouble("struct");
 			int paint = obj.optInt("paint");
-			int extrapolation = obj.optInt("extrapolation");
-			String infomation = processAfund(info, seconds, 120, order, extrapolation, outrate, 0, amount, "", paint);
+			String infomation = processAfund(info, seconds, 120, order, extrapolation, outrate, 0, amount > start ? amount : start, "", paint);
 			if (!"".equals(infomation)) {
 				String newNAVstring = Framework.getInfoFromJson(infomation, "newNAV", ":");
 				String trade = Framework.produceTradeItem(infomation);
@@ -298,7 +308,7 @@ public class Framework {
 			}
 		}
 	}
-	public static void runminutes(JSONArray coins, int seconds) {
+	public static void runminutes(JSONArray coins, JSONObject param, int seconds) {
 		boolean ifsave = false;
 		for (int j = 0; j < coins.length(); j++) {
 			JSONObject obj = coins.getJSONObject(j);
@@ -312,20 +322,42 @@ public class Framework {
 			if (!ifsave) {
 				ifsave = true;
 			}
-			Fund aFund = new Fund();
-			aFund.polynomial_all.process(points, aFund.risklevel, 1, 0);
-			double toprate = aFund.polynomial_all.evaltoprate(points.get(points.size() - 1).getY());
-			double Erate = aFund.getdiscount(1, toprate, pack.discountRate);
-			obj.put("struct", Erate);
-			/* 1\getdatafromnet
-			 * 2\runestimate
-			 * 3\trade
-			 */
+			JSONObject recordInfo = null;
+			JSONArray coinsInfo = param.getJSONArray("coins");
+			for (int i = 0; i < coinsInfo.length(); i++) {
+				recordInfo = coinsInfo.getJSONObject(i);
+				if (info[0].equals(recordInfo.getString("type"))) {
+					break;
+				}
+			}
+			double outrate = 0;
+			outrate = recordInfo.optDouble("struct");
+			double Erate = 0;
+			int paint = recordInfo.optInt("paint");
+			Fund aFund = new Fund(info, points, paint);
+			//aFund.polynomial_all.process(points, aFund.risklevel, 1, 0);
+			double toprate = aFund.lastpointtoprate;// polynomial_all.evaltoprate(points.get(points.size() - 1).getY());
+			Erate = aFund.getdiscount(1, toprate, pack.discountRate);
+			int rd = param.optInt("rd");
+			int nd = param.optInt("nd");
+			int st = param.optInt("st");
+			if (toprate > 0.99) {
+				Erate = 2 + 12 / (nd / st);
+				System.out.println("                                                       TOP!!!: " + toprate + " Erate: " + Erate);
+			} else {
+				if (outrate > 2) {
+					Erate = outrate - 1;
+					System.out.println("                                                       NO BUYING!!!: " + toprate + " TIMES: " + (Erate - 2));
+				} else {
+					System.out.println("toprate: " + toprate + " Erate: " + Erate);
+				}
+			}
+			recordInfo.put("struct", Erate);
 		}
 		if (ifsave) {
 			System.out.println("new co save!");
-			String path = Framework.getPath("coin", "paint", "list");
-			verify.saveparam(path, coins.toString());
+			String path = Framework.getPath("coin", "paint", "processInfo");
+			verify.saveparam(path, param.toString());
 		}
 	}
 	public static String processAfund(String[] type, int seconds, int num, double order, int extrapolation, double f, int gate, double amount, String outpath, int paint) {
@@ -525,7 +557,7 @@ public class Framework {
 		for (int i = 0; i < finaldata.size(); i++) {
 			verify.appenddata(getPath("today", "trade", "tradelist")
 			// replacepath(tradeListPath, "date", gettodate())
-					, finaldata.get(i).printtodolist(i + 1) + "\n");
+					, finaldata.get(i).printtodolist((i + 1) + "") + "\n");
 		}
 	}
 
@@ -580,7 +612,7 @@ public class Framework {
 					verify.saveparam(basepath + "/tradeList.txt", "");
 					verify.appenddata(basepath + "/tradeList.txt"
 					// replacepath(tradeListPath, "date", gettodate())
-							, aInvestment.printtodolist(0) + "\n");
+							, aInvestment.printtodolist("0") + "\n");
 				}
 				bri.close();
 			}
@@ -619,7 +651,7 @@ public class Framework {
 			aInvestment.cost = aInvestment.cash * aInvestment.inrates;
 			aInvestment.cost = verify.cutDouble(aInvestment.cost, 2);
 		}
-		return aInvestment.printtodolist(0);
+		return aInvestment.printtodolist(Framework.getNowTimestamp() + "");
 	}
 
 	public static void executeOnline(String line, String price) {
@@ -714,7 +746,7 @@ public class Framework {
 		for (int i = 0; i < data.size(); i++) {
 			verify.appenddata(getPath("today", "trade", "tradelist")
 			// replacepath(tradeListPath, "date", gettodate())
-					, data.get(i).printtodolist(i + 1) + "\n");
+					, data.get(i).printtodolist((i + 1) + "") + "\n");
 		}
 	}
 

@@ -101,7 +101,7 @@ def main():
     plt.legend()
     # plt.margins(x=0, y=0)
     plt.draw()
-    plt.pause(params['nd'] - 2)
+    plt.pause(params['st'] - 2)
     plt.close(fig)
 
 main()

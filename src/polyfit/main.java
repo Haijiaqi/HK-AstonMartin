@@ -80,7 +80,7 @@ public class main {
 		// Java program to demonstrate working of Scanner in Java
 		// Using Scanner for Getting Input from User
 		Scanner in = new Scanner(System.in);
-		System.out.println("resore seconds data?[yes/no]");
+		System.out.println("resore seconds data?[yes?]");
 		String s = in.nextLine();
 		in.close();
 		if ("yes".equals(s)) {
@@ -92,18 +92,40 @@ public class main {
 			verify.saveparam(path, "");
 			path = Framework.getPath("coin", "minutes", "YFII-USDT");
 			verify.saveparam(path, "");
+			path = Framework.getPath("coin", "seconds", "BTC-USDT" + "_data");
+			verify.saveparam(path, "");
+			path = Framework.getPath("coin", "seconds", "YFII-USDT" + "_data");
+			verify.saveparam(path, "");
+			path = Framework.getPath("coin", "minutes", "BTC-USDT" + "_data");
+			verify.saveparam(path, "");
+			path = Framework.getPath("coin", "minutes", "YFII-USDT" + "_data");
+			verify.saveparam(path, "");
 		}
 		for (int i = 0; true; i++) {
 			String configPath = Framework.getPath("coin", "paint", "processInfo");
 			JSONObject params = verify.loadObject(configPath);
-			JSONArray list = verify.loadArray(Framework.getPath("coin", "paint", "list"));
-			params.put("coins", list);
-			if ("true".equals(params.getString("On"))) {
-				JSONArray coins = params.getJSONArray("coins");
+			JSONArray coins = verify.loadArray(Framework.getPath("coin", "paint", "list"));
+			int script = params.optInt("script");
+			if (script != 0) {
+				String command = "python3 " + Framework.basepath + "/script.py";
+				System.out.println(command);
+				try {
+					Process pr = Runtime.getRuntime().exec(command);
+					params.put("script", 0);
+					verify.saveparam(configPath, params.toString());
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}					
+			}
+			//params.put("coins", list);
+			if (params.getBoolean("On")) {
+				//JSONArray coins = params.getJSONArray("coins");
 				int flag = 0;
 				int rd = params.optInt("rd");
 				int nd = params.optInt("nd");
 				int st = params.optInt("st");
+				System.out.println("-------------------------------------------------------");
 				System.out.println(Framework.timeToGo(st));
 				if (Framework.ifNewTime(nd)) {
 					//getrun days 15minutes 15seconds
@@ -116,16 +138,16 @@ public class main {
 					flag = 1;
 				}
 				if (flag == 1) {
-					Framework.runseconds(coins, st);
+					Framework.runseconds(coins, params, st);
 				} else if (flag == 11) {
-					Framework.runseconds(coins, st);
+					Framework.runseconds(coins, params, st);
 					try {
 						Thread.sleep(500);
 					} catch (InterruptedException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
-					Framework.runminutes(coins, nd);
+					Framework.runminutes(coins, params, nd);
 				}
 				/*switch (flag) {
 					case 111:
@@ -144,20 +166,6 @@ public class main {
 					default:
 						break;
 				}*/
-				int script = params.optInt("script");
-				if (script != 0) {
-					String command = "python3 " + Framework.basepath + "/script.py";
-					System.out.println(command);
-					try {
-						Process pr = Runtime.getRuntime().exec(command);
-						params.put("script", 0);
-						params.remove("coins");
-						verify.saveparam(configPath, params.toString());
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}					
-				}
 				//Framework.timeToGo(st);
 			} else {
 				try {

@@ -112,7 +112,13 @@ public class Fund {
 		extractindex(false);
 		if (paint > 0) {
 			try {
-				Process pr = Runtime.getRuntime().exec("python " + Framework.basepath + "/canpaintin20210702.py");
+				String pythonconfig = Framework.getPath("coin", "paint", "pythonparam");
+				String rawdata = Framework.getPath("coin", "paint", "rawdata");
+				verify.appenddata(pythonconfig, " $" + newNAVstring + ";" + rawdata);
+				verify.savenewdata(rawdata, points);
+				String command = "python3 " + Framework.basepath + "/canpaintin20210702.py";
+				System.out.println(command);
+				Process pr = Runtime.getRuntime().exec(command);
 				Thread.sleep(paint);
 			} catch (InterruptedException | IOException e) {
 				e.printStackTrace();
@@ -391,7 +397,7 @@ public class Fund {
 	public pack onLineDemandInvast(double fundamental, boolean online) {
 		pack result = new pack();
 		pack weight = new pack();
-		double x = points.get(points.size() - 1).getX();// + pack.interval;
+		double x = quadraticpoints.get(quadraticpoints.size() - 1).getX();// + pack.interval;
 		if (online) {
 			ArrayList<pack> pointsOnline = (ArrayList<pack>)quadraticpoints.clone();
 			pack onlinePoint = getEstimitValueFromNet();
@@ -429,7 +435,7 @@ public class Fund {
 			fundamental, 1, 0.5).getX();*/
 
 			quadratic.processR(quadraticpoints, 2, extrapolations);
-			weight = quadratic.getStringWeight(x + pack.interval, x, order,
+			weight = quadratic.getStringWeight(x, x - pack.interval, order,
 					fundamental, 1, 0.5); 
 			result.value = weight.getX();
 			// result.r = pack.stagesweight[0] * result.x + pack.stagesweight[1] * result.value + pack.stagesweight[2] * result.y;
@@ -462,7 +468,7 @@ public class Fund {
 			if (result.r > 0) {
 				verify.appenddata(Framework.getPath("coin", "paint", "weightup"),
 				String.valueOf(x + 0 * pack.interval) + ","
-				+ String.valueOf(result.r * 1000 + points.get(points.size() - 1).getY()) + "\n");
+				+ String.valueOf(result.r * 250 + points.get(points.size() - 1).getY()) + "\n");
 				System.out.println("into up!");
 				//verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(verify.cutDouble(result.r, 4)));
 			}
@@ -470,7 +476,7 @@ public class Fund {
 				if (result.val > -1) {
 					verify.appenddata(Framework.getPath("coin", "paint", "weightdn"),
 					String.valueOf(x + 0 * pack.interval) + ","
-					+ String.valueOf(result.val * 50 + points.get(points.size() - 1).getY()) + "\n");
+					+ String.valueOf(result.val * 25 + points.get(points.size() - 1).getY()) + "\n");
 					System.out.println("into dn!");
 					//verify.appenddata(Framework.basepath + "/pythonparam.txt", String.valueOf(verify.cutDouble(result.val, 4)));
 				}
@@ -685,7 +691,8 @@ public class Fund {
 		if (Erate >= 0) {
 			Erate *= immediaterisk;
 			conclusion = reliability * Erate / (1 + fee);
-			System.out.println("immediateriskup: " + immediaterisk + ", " + Erate);
+			System.out.println("  /|\\  ");
+			System.out.println("   |    " + immediaterisk + ", " + Erate);
 		} else {
 			Erate = result.val;
 			if (Erate > -1) {
@@ -694,15 +701,20 @@ public class Fund {
 				if (Erate <= -1) {
 					Erate = -0.999;
 				}				
+			} else if (Erate <= -1) {
+				Erate = -1;
 			}
-			System.out.println("immediateriskdn: " + (-(immediaterisk - 2)) + ", " + Erate);
+			System.out.println("   |    ");
+			System.out.println("  \\|/   " + (-(immediaterisk - 2)) + ", " + Erate);
 			conclusion = reliability * Erate / (1 + fee);
 		}
 		if (Erate > -1 && Erate < 0 ) {
 			Erate *= getdiscount(Erate, lastpointtoprate, pack.discountRate);
-			if (Erate < -1) {
+			if (Erate <= -1) {
 				Erate = -0.999;
 			}
+		} else if (Erate <= -1){
+			Erate = -1;
 		} else {
 			Erate *= getdiscount(Erate, lastpointtoprate, pack.discountRate);
 		}

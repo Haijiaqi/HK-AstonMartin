@@ -430,7 +430,7 @@ public class verify {
 		if (addORall) {
 			String path = Framework.getPath("coin", temppath, type);
 			ArrayList<String> lines = new ArrayList<>();
-			lines = loadlines(path, 0, num);
+			lines = loadlines(path, 1, num + 1);
 			url = "https://www.okx.com/api/v5/market/index-tickers?instId=BTC-USD".replace("instId=BTC-USD", instId);
 			//url = ("https://www.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1s&limit=120").replace("BTCUSDT", type.replace("-", ""));
 			json = getInfoFromNet(url);
@@ -438,6 +438,7 @@ public class verify {
 			json = (JSONObject)jsonArray.get(0);
 			int linenum = lines.size();
 			String line = json.getString("ts") + "," + json.getString("idxPx");
+			verify.appenddata(Framework.getPath("coin", temppath, type + "_data"), line + "\n");
 			if (linenum < num - 1) {
 				verify.appenddata(path, line + "\n");
 				return null;
@@ -447,7 +448,7 @@ public class verify {
 			if (points == null || points.size() == 0) {
 				return null;
 			}
-			keeplines(path, num - 1, line + "\n");// points.size();// 
+			keeplines(path, num, line + "\n");// points.size();// 
 			/*jsonArray = getArrayFromNet(url);
 			points = getPointsFromArray(jsonArray, num);*/
 			//points = keeplinesIn(points, num, json);	

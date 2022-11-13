@@ -14,7 +14,7 @@ import org.json.JSONObject;
 import formula.number;
 
 public class Investment {
-	int id = 0;
+	String id = "0";
 	long timestamp = 0;
 	String fund = "";
 	String remark = "";
@@ -38,19 +38,19 @@ public class Investment {
 
 	public Investment(String atrade) {
 		String[] info = atrade.split(",");
-		id = Integer.valueOf(info[0]);
+		id = info[0];
 		fund = info[2];// + "," + info[2];
 		cost = Double.valueOf(info[1]);
 		remark = info[3];
 	}
 
-	public String printtodolist(int id) {
+	public String printtodolist(String id) {
 		String result = "";
 		result += id + "," + cost + "," + fund + " " + verify.cutDouble(inrates, 3);
 		return result;
 	}
 
-	public Investment(int id, long todaytimestamp, String fund, double cost,
+	public Investment(String id, long todaytimestamp, String fund, double cost,
 			double newNAV, double inrates) {
 		this.id = id;
 		this.fund = fund;
@@ -58,7 +58,7 @@ public class Investment {
 		buysome(cost, newNAV, inrates);
 	}
 
-	public Investment(int id, long timestamp, String fund, double cost,
+	public Investment(String id, long timestamp, String fund, double cost,
 			double NAV, double inrates, double stockshare, double share, double balance,
 			double cash) {
 		super();
@@ -93,7 +93,7 @@ public class Investment {
 
 	public static Investment load(String print) {
 		String[] info = print.split(",");
-		Investment aInvestment = new Investment(Integer.valueOf(info[0]),
+		Investment aInvestment = new Investment(info[0],
 				Long.valueOf(info[1]), info[2], Double.valueOf(info[3]),
 				Double.valueOf(info[4]), Double.valueOf(info[5]),
 				Double.valueOf(info[6]), Double.valueOf(info[7]),
@@ -105,7 +105,7 @@ public class Investment {
 		double number = Double.valueOf(trade.cost);
 		if (number >= 0) {
 			info2 = info2.substring(0, info2.indexOf("%"));
-			buy(trade.fund, number, Double.valueOf(info1),
+			buy(trade.fund + "," + trade.id, number, Double.valueOf(info1),
 					Double.valueOf(info2) / 100, type, trade.remark, online);
 		} else if (number < 0) {
 			sell(trade.fund, number, Double.valueOf(info1), type, online);
@@ -149,8 +149,11 @@ public class Investment {
 			double nowCash = gettotalcash(investments);
 			double deltaCost = preCost - nowCost;
 			double deltaCash = nowCash - preCash;
+			System.out.println(" " + preCost + " " + nowCost + " " + preCash + " " + nowCash);
 			String path = Framework.getPath("coin", "paint", "processInfo");
 			JSONObject param = verify.loadObject(path);
+			//path = Framework.getPath("coin", "paint", "listInfo");
+			JSONArray coinsInfo = param.getJSONArray("coins");
 			path = Framework.getPath("coin", "paint", "list");
 			JSONArray coins = verify.loadArray(path);
 			//param.put("coins", list);
@@ -165,26 +168,35 @@ public class Investment {
 					for (int i = 0; i < coins.length(); i++) {
 						JSONObject record = coins.getJSONObject(i);
 						if (aim.equals(record.getString("type"))) {
-							fold = record.getBoolean("fold");
+							JSONObject recordInfo = null;
+							for (int j = 0; j < coinsInfo.length(); j++) {
+								recordInfo = coinsInfo.getJSONObject(j);
+								if (aim.equals(recordInfo.getString("type"))) {
+									break;
+								}
+							}
+							fold = recordInfo.getBoolean("fold");
 							int paint = record.getInt("paint");
 							if (paint > 0) {
 								paint -= 1;
 								record.put("paint", paint);
 							}
 							double money = record.getDouble("cost");
+							if (deltaCash < 0) {
+								System.out.println("loss butsell!" + deltaCash);
+							}
 							money += deltaCash;
 							record.put("cost", money);
 							record.put("NAV", newNAV);
 							double marketprice = gettotalmarketprice(investments, newNAV);
 							record.put("balance", marketprice);
-							double profit = money + marketprice * (1 - record.getDouble("inrates"));
+							double profit = money + marketprice * (1 - recordInfo.getDouble("inrates"));
 							record.put("cash", profit);
-							double start = record.getDouble("start");
+							double start = recordInfo.getDouble("start");
 							double amount = record.getDouble("amount");
-							double nowAmount = start + (profit > 0 ? profit / record.getDouble("flag") : 0);
+							double nowAmount = start + (profit > 0 ? profit / recordInfo.getDouble("flag") : 0);
 							record.put("amount", amount > nowAmount ? amount : nowAmount);
 							coins.put(i, record);
-							//param.put("coins", coins);
 							verify.saveparam(path, coins.toString());
 							verify.appenddata(Framework.getPath("coin", "paint", "history"), coins.toString() + "\n");
 							System.out.println(record.toString());
@@ -200,12 +212,16 @@ public class Investment {
 					*/
 				}
 				rewrites(aim, investments, fold);
+			} else {
+				System.out.println("deltaCash / deltaCost = " + (deltaCash / deltaCost));
 			}
 		}
 	}
 
 	public static void buy(String aim, double cost, double newNAV,
 			double inrates, int type, String remark, boolean online) {
+		String[] info = aim.split(",");
+		aim = info[0];
 		ArrayList<Investment> investments = loads(aim);
 		Investment thisInvestment = null;
 		boolean alreadyhas = false;
@@ -219,10 +235,11 @@ public class Investment {
 				}
 			}
 			if (!alreadyhas) {
-				Investment aInvestment = new Investment(0,
+				Investment aInvestment = new Investment(info.length > 1 ? info[1] : "0",
 				(type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp()), aim + " " + remark, cost, newNAV, inrates);
 				String path = Framework.getPath("coin", "paint", "processInfo");
 				JSONObject param = verify.loadObject(path);
+				JSONArray coinsInfo = param.getJSONArray("coins");
 				path = Framework.getPath("coin", "paint", "list");
 				JSONArray coins = verify.loadArray(path);
 				//param.put("coins", list);
@@ -233,7 +250,14 @@ public class Investment {
 					for (int i = 0; i < coins.length(); i++) {
 						JSONObject record = coins.getJSONObject(i);
 						if (aim.equals(record.getString("type"))) {
-							fold = record.getBoolean("fold");
+							JSONObject recordInfo = null;
+							for (int j = 0; j < coinsInfo.length(); j++) {
+								recordInfo = coinsInfo.getJSONObject(j);
+								if (aim.equals(recordInfo.getString("type"))) {
+									break;
+								}
+							}
+							fold = recordInfo.getBoolean("fold");
 							int paint = record.getInt("paint");
 							if (paint > 0) {
 								paint -= 1;
@@ -247,12 +271,11 @@ public class Investment {
 							record.put("balance", marketprice);
 							double profit = money + marketprice * (1 - inrates);
 							record.put("cash", profit);
-							double start = record.getDouble("start");
+							double start = recordInfo.getDouble("start");
 							double amount = record.getDouble("amount");
-							double nowAmount = start + (profit > 0 ? profit / record.getDouble("flag") : 0);
+							double nowAmount = start + (profit > 0 ? profit / recordInfo.getDouble("flag") : 0);
 							record.put("amount", amount > nowAmount ? amount : nowAmount);
 							coins.put(i, record);
-							param.put("coins", coins);
 							verify.saveparam(path, coins.toString());
 							verify.appenddata(Framework.getPath("coin", "paint", "history"), coins.toString() + "\n");
 							System.out.println(record.toString());
