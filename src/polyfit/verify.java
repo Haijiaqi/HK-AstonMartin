@@ -285,17 +285,30 @@ public class verify {
 			int first = path.size();
 			double avg = 0;
 			int divide = 100000;
+			int teststart = 0;
 			if (first >= 3) {
-				first = (first > 5 ? 5 : first);
-				for (int i = 0; i < first; i++) {
+				for (int i = 0; i < path.size() - 3; i++) {
+					String[] xy1 = path.get(i).split(",");
+					String[] xy2 = path.get(i + 1).split(",");
+					String[] xy3 = path.get(i + 2).split(",");
+					double x1 = Double.valueOf(xy1[0]);
+					double x2 = Double.valueOf(xy2[0]);
+					double x3 = Double.valueOf(xy3[0]);
+					if (x1 != x2 && x1 != x3 && x2 != x3) {
+						teststart += i;
+						break;
+					}
+				}
+				first = (first > teststart + 5 ? (teststart + 5) : first);
+				for (int i = teststart, j = 0; i < first; i++, j++) {
 					alinet = path.get(i);
-					if (i == 0) {
+					if (i == teststart) {
 						String[] xy = alinet.split(",");
 						pointt = new pack(Double.valueOf(xy[0]), 999999999);
 					}
-					if (i > 0) {
+					if (i > teststart) {
 						String[] xy = alinet.split(",");
-						pointt = new pack(Double.valueOf(xy[0]), Double.valueOf(xy[0]) - pointst.get(i - 1).getX());
+						pointt = new pack(Double.valueOf(xy[0]), Double.valueOf(xy[0]) - pointst.get(j - 1).getX());
 					}
 					pointst.add(pointt);
 				}
@@ -307,21 +320,23 @@ public class verify {
 				avg /= (pointst.size() - 1);
 			}
 			divide = (int)(avg * 100 + 0.000001);
-			String aline = null;
-			pack firstpoint = null;
-			for (int i = 0; i < end; i++) {
-				aline = path.get(i);
-				if (i == start) {
-					String[] xy = aline.split(",");
-					firstpoint = new pack(Double.valueOf(xy[0]),
-							"None".equals(xy[1]) ? 0 : Double.valueOf(xy[1]));
-				}
-				if (i >= start) {
-					String[] xy = aline.split(",");
-					pack point = new pack(Double.valueOf(xy[0]),
-							Double.valueOf("None".equals(xy[1]) ? 0 : Double.valueOf(xy[1])));
-					point.minus(firstpoint, divide, type);
-					points.add(point);
+			if (divide != 0) {
+				String aline = null;
+				pack firstpoint = null;
+				for (int i = 0; i < end; i++) {
+					aline = path.get(i);
+					if (i == start) {
+						String[] xy = aline.split(",");
+						firstpoint = new pack(Double.valueOf(xy[0]),
+								"None".equals(xy[1]) ? 0 : Double.valueOf(xy[1]));
+					}
+					if (i >= start) {
+						String[] xy = aline.split(",");
+						pack point = new pack(Double.valueOf(xy[0]),
+								Double.valueOf("None".equals(xy[1]) ? 0 : Double.valueOf(xy[1])));
+						point.minus(firstpoint, divide, type);
+						points.add(point);
+					}
 				}
 			}
 		} catch (Exception e) {
@@ -408,6 +423,30 @@ public class verify {
 		}
 		return 0;
 	}
+	public static int copylines(String path1, String path2) {
+		try {
+			verify.saveparam(path2, "");
+			BufferedReader bt = new BufferedReader(new FileReader(path1));
+			String alinet = null;
+			ArrayList<String> lines = new ArrayList<String>();
+			for (int i = 0; (alinet = bt.readLine()) != null; i++) {
+				lines.add(alinet);
+			}
+			bt.close();
+			Thread.sleep(5);
+			BufferedWriter bw = new BufferedWriter(new FileWriter(
+					path2));
+			for (int j = 0; j < lines.size(); j++) {
+				bw.write(lines.get(j) + "\n");
+			}
+			bw.close();
+			Thread.sleep(5);
+			return lines.size();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
 	public static ArrayList<pack> keeplinesIn(ArrayList<pack> pointst, int linenum, JSONObject json) {
 		ArrayList<pack> newpointst = new ArrayList<pack>();
 		int length = pointst.size();
@@ -428,7 +467,7 @@ public class verify {
 		JSONObject json = null;
 		JSONArray jsonArray = null;
 		if (addORall) {
-			String path = Framework.getPath("coin", temppath, type);
+			String path = Framework.getPath(temppath, "fund", type);
 			ArrayList<String> lines = new ArrayList<>();
 			lines = loadlines(path, 1, num + 1);
 			url = "https://www.okx.com/api/v5/market/index-tickers?instId=BTC-USD".replace("instId=BTC-USD", instId);
@@ -438,21 +477,26 @@ public class verify {
 			json = (JSONObject)jsonArray.get(0);
 			int linenum = lines.size();
 			String line = json.getString("ts") + "," + json.getString("idxPx");
-			verify.appenddata(Framework.getPath("coin", temppath, type + "_data"), line + "\n");
-			if (linenum < num - 1) {
-				verify.appenddata(path, line + "\n");
-				return null;
+			if (line.equals(lines.get(lines.size() - 1))) {
+				System.out.println("add a same line!!! " + line);
+				return points = null;
+			} else {
+				verify.appenddata(Framework.getPath(temppath, "fund", type + "_data"), line + "\n");
+				if (linenum < num - 1) {
+					verify.appenddata(path, line + "\n");
+					return null;
+				}
+				lines.add(line);
+				points = loadpoints(lines, 0, num, datatype);
+				if (points == null || points.size() == 0) {
+					return null;
+				}
+				keeplines(path, num, line + "\n");// points.size();// 
+				/*jsonArray = getArrayFromNet(url);
+				points = getPointsFromArray(jsonArray, num);*/
+				//points = keeplinesIn(points, num, json);	
+				//points = verify.loadpoints(path, 0, num, datatype);
 			}
-			lines.add(line);
-			points = loadpoints(lines, 0, num, datatype);
-			if (points == null || points.size() == 0) {
-				return null;
-			}
-			keeplines(path, num, line + "\n");// points.size();// 
-			/*jsonArray = getArrayFromNet(url);
-			points = getPointsFromArray(jsonArray, num);*/
-			//points = keeplinesIn(points, num, json);	
-			//points = verify.loadpoints(path, 0, num, datatype);
 		} else {
 			int end = num % 100;
 			int loop = num / 100 + end == 0 ? 0 : 1;

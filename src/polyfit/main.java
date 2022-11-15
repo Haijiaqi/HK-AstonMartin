@@ -84,22 +84,32 @@ public class main {
 		String s = in.nextLine();
 		in.close();
 		if ("yes".equals(s)) {
-			String path = Framework.getPath("coin", "seconds", "BTC-USDT");
-			verify.saveparam(path, "");
-			path = Framework.getPath("coin", "seconds", "YFII-USDT");
-			verify.saveparam(path, "");
-			path = Framework.getPath("coin", "minutes", "BTC-USDT");
-			verify.saveparam(path, "");
-			path = Framework.getPath("coin", "minutes", "YFII-USDT");
-			verify.saveparam(path, "");
-			path = Framework.getPath("coin", "seconds", "BTC-USDT" + "_data");
-			verify.saveparam(path, "");
-			path = Framework.getPath("coin", "seconds", "YFII-USDT" + "_data");
-			verify.saveparam(path, "");
-			path = Framework.getPath("coin", "minutes", "BTC-USDT" + "_data");
-			verify.saveparam(path, "");
-			path = Framework.getPath("coin", "minutes", "YFII-USDT" + "_data");
-			verify.saveparam(path, "");
+			String path1 = "";
+			String path2 = "";
+			path1 = Framework.getPath("seconds", "fund", "BTC-USDT_keep");
+			path2 = Framework.getPath("seconds", "fund", "BTC-USDT");
+			verify.copylines(path1, path2);
+			path1 = Framework.getPath("seconds", "fund", "BTC-USDT_keep");
+			path2 = Framework.getPath("seconds", "fund", "BTC-USDT_data");
+			verify.copylines(path1, path2);
+			path1 = Framework.getPath("seconds", "fund", "YFII-USDT_keep");
+			path2 = Framework.getPath("seconds", "fund", "YFII-USDT");
+			verify.copylines(path1, path2);
+			path1 = Framework.getPath("seconds", "fund", "YFII-USDT_keep");
+			path2 = Framework.getPath("seconds", "fund", "YFII-USDT_data");
+			verify.copylines(path1, path2);
+			path1 = Framework.getPath("minutes", "fund", "BTC-USDT_keep");
+			path2 = Framework.getPath("minutes", "fund", "BTC-USDT");
+			verify.copylines(path1, path2);
+			path1 = Framework.getPath("minutes", "fund", "BTC-USDT_keep");
+			path2 = Framework.getPath("minutes", "fund", "BTC-USDT_data");
+			verify.copylines(path1, path2);
+			path1 = Framework.getPath("minutes", "fund", "YFII-USDT_keep");
+			path2 = Framework.getPath("minutes", "fund", "YFII-USDT");
+			verify.copylines(path1, path2);
+			path1 = Framework.getPath("minutes", "fund", "YFII-USDT_keep");
+			path2 = Framework.getPath("minutes", "fund", "YFII-USDT_data");
+			verify.copylines(path1, path2);
 		}
 		for (int i = 0; true; i++) {
 			String configPath = Framework.getPath("coin", "paint", "processInfo");
@@ -148,6 +158,22 @@ public class main {
 						e1.printStackTrace();
 					}
 					Framework.runminutes(coins, params, nd);
+				} else if (flag == 111) {
+					Framework.runseconds(coins, params, st);
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					Framework.runminutes(coins, params, nd);
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					Framework.runhours(coins, params, rd);
 				}
 				/*switch (flag) {
 					case 111:

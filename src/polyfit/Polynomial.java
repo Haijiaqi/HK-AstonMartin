@@ -732,6 +732,10 @@ public class Polynomial {
 				break;
 			}
 		}
+		if (result == -1) {
+			System.out.println("cannot find interval! x = " + x);
+			result = 0;
+		}
 		return result;
 	}
 
@@ -1002,7 +1006,7 @@ public class Polynomial {
 			if ((x - function1.start) * (x - function1.end) > 0) {
 				x = start;
 			}
-			double ready = (function1.f(x, 0) - function1.f(zero, 0)) / (Math.abs(integral) / 1.333333);
+			double ready = (function1.f(x, 0) - function1.f(zero, 0)) / (Math.abs(integral) / 1.5);
 			ready = Math.abs(ready) > 1 ? Math.signum(ready) : ready;
 			double weight = total * (function1.f(x, 0) - function1.f(start, 0)) / Math.abs(integral);
 			result.setX(weight);

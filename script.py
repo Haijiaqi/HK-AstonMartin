@@ -80,7 +80,7 @@ def main():
     a = params[0]
     #a['struct'] = "@16500%2@17400%1@20000%0"
     #a['fold'] = True
-    a['paint'] = 10
+    a['paint'] = 100
     b = params[1]
     #b['fold'] = True
     code = demjson.encode(params)

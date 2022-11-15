@@ -255,22 +255,56 @@ public class Framework {
 		Investment.amount = (coefficient - 1) * 20000;
 	}
 
-	public static void runhours(JSONArray coins, int seconds) {
+	public static void runhours(JSONArray coins, JSONObject param, int seconds) {
+		boolean ifsave = false;
 		for (int j = 0; j < coins.length(); j++) {
 			JSONObject obj = coins.getJSONObject(j);
-			Polynomial start = new Polynomial(1);
 			String[] info = { obj.getString("type"), obj.getString("name") };
-			int order = Integer.parseInt(obj.getString("order"));
-			int paint = Integer.parseInt(obj.getString("paint"));
-			String upper = Framework.getPath("coin", "minutes", info[0]);
-			upper = verify.loadparam(upper);
-			double Erate = Double.valueOf(Framework.getInfoFromJson(upper, "Erate", ":")) - 1;
-			String newNAVstring = Framework.getInfoFromJson(upper, "newNAV", ":");
-			double amount = Double.parseDouble(obj.getString("amount"));
-			int extrapolation = obj.optInt("extrapolation");
-			String infomation = processAfund(info, seconds, 120, order, extrapolation, 0, Erate > 0 ? 1 : -1, amount * Erate, "", paint);
-			String trade = Framework.produceTradeItem(infomation);
-			executeOnline(trade, newNAVstring);
+			ArrayList<pack> points = null;
+			points = verify.getData(seconds < 60, info[0], seconds, 120, -1, "hours");	
+			if (points == null) {
+				System.out.println(info[0] + " loading from net!");
+				continue;
+			}
+			if (!ifsave) {
+				ifsave = true;
+			}
+			JSONObject recordInfo = null;
+			JSONArray coinsInfo = param.getJSONArray("coins");
+			for (int i = 0; i < coinsInfo.length(); i++) {
+				recordInfo = coinsInfo.getJSONObject(i);
+				if (info[0].equals(recordInfo.getString("type"))) {
+					break;
+				}
+			}
+			double outrate = 0;
+			outrate = recordInfo.optDouble("struct");
+			double Erate = 0;
+			int paint = recordInfo.optInt("paint");
+			Fund aFund = new Fund(info, points, paint);
+			//aFund.polynomial_all.process(points, aFund.risklevel, 1, 0);
+			double toprate = aFund.lastpointtoprate;// polynomial_all.evaltoprate(points.get(points.size() - 1).getY());
+			Erate = aFund.getdiscount(1, toprate, pack.discountRate);
+			int rd = param.optInt("rd");
+			int nd = param.optInt("nd");
+			int st = param.optInt("st");
+			if (toprate > 0.99) {
+				Erate = 2 + 12 / (rd / nd);
+				System.out.println("                                                       TOP!!!: " + toprate + " Erate: " + Erate);
+			} else {
+				if (outrate > 2) {
+					Erate = outrate - 1;
+					System.out.println("                                                       NO BUYING!!!: " + toprate + " TIMES: " + (Erate - 2));
+				} else {
+					System.out.println("toprate: " + toprate + " Erate: " + Erate);
+				}
+			}
+			recordInfo.put("struct", Erate);
+		}
+		if (ifsave) {
+			System.out.println("new co save!");
+			String path = Framework.getPath("coin", "paint", "processInfo");
+			verify.saveparam(path, param.toString());
 		}
 	}
 	public static void runseconds(JSONArray coins, JSONObject param, int seconds) {
@@ -342,7 +376,7 @@ public class Framework {
 			int nd = param.optInt("nd");
 			int st = param.optInt("st");
 			if (toprate > 0.99) {
-				Erate = 2 + 12 / (nd / st);
+				Erate = 2 + 12;// / (nd / st);
 				System.out.println("                                                       TOP!!!: " + toprate + " Erate: " + Erate);
 			} else {
 				if (outrate > 2) {
