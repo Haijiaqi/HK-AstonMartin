@@ -190,9 +190,8 @@ public class Investment {
 								if ((new Long(System.currentTimeMillis()) - new Long(ID) < 5000)) {
 									if ("0".equals(reply[3])) {
 										goon = true;
-										serialno = files[j].getAbsolutePath();
-										tradeString += "," + reply[3] + "," + reply[4];
 									}									
+									tradeString += "," + reply[3] + "," + reply[4];
 								} else {
 									tradeString += "," + reply[3] + "," + reply[4] + " butexceed5s";
 								}
@@ -209,7 +208,9 @@ public class Investment {
 						tradeString += ",-1" + "," + emsg.substring(0, emsg.indexOf("\n"));
 						out = true;
 					}
-					cycTimes = i;
+					if (!goon) {
+						cycTimes = i;						
+					}
 					if (out) {
 						break;
 					}
@@ -361,10 +362,9 @@ public class Investment {
 									if ((new Long(System.currentTimeMillis()) - new Long(ID) < 5000)) {
 										if ("0".equals(reply[3])) {
 											goon = true;
-											serialno = files[j].getAbsolutePath();
-											tradeString += "," + reply[3] + "," + reply[4];
 											investments.add(aInvestment);
-										}									
+										}
+										tradeString += "," + reply[3] + "," + reply[4];
 									} else {
 										tradeString += "," + reply[3] + "," + reply[4] + " butexceed5s";
 									}
@@ -381,7 +381,9 @@ public class Investment {
 							tradeString += ",-1" + "," + emsg.substring(0, emsg.indexOf("\n"));
 							out = true;
 						}
-						cycTimes = i;
+						if (!goon) {
+							cycTimes = i;						
+						}
 						if (out) {
 							break;
 						}
