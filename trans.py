@@ -63,10 +63,35 @@ def turnpage(url, start, inter, page):
     print(pi)
     return url.replace(pre, pi)
 
-name = 'okex15.txt'
+
+basepath = os.getcwd() + '/work/coin/'
+xchangeout = basepath + "xchangeout"
+xchangein = basepath + "xchangein"
+while True:
+    list = os.listdir(xchangeout)
+    i = 0
+    for line in list:
+        text = line.split(",")
+        ts = eval(text[0])
+        nowtime = time.time() * 1000 - 86400
+        if nowtime - ts < 5000:
+            time.sleep(0.1)
+            returnString = text[0] + "," + "ordId" + "," + "tag" + "," + "0" + "," + "success"
+            print(line + "\nfileNETdone!" + returnString)
+        else:
+            returnString = text[0] + "," + "ordId" + "," + "tag" + "," + "-4" + "," + "exceed5s"
+            print(line + "\nEXCEED!" + returnString)
+        fi = open(xchangein + "/" + returnString, 'w')
+        fi.close()
+        abspath = xchangeout + "/" + line
+        if os.path.exists(abspath):
+            os.remove(abspath)
+        time.sleep(0.1)
+        i += 1
+    
+'''name = 'okex15.txt'
 inter = 86400000
 start = 1655481600000
-basepath = os.getcwd() + '/fund/coin/'
 fi = open(basepath + name, 'w')
 fi.write('')
 fi.close()
@@ -78,3 +103,4 @@ for i in range(1000):
         getparamfromnet(text, basepath + name)
 
 #text = getparam(0)
+'''

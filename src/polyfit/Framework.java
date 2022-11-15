@@ -1154,7 +1154,7 @@ public class Framework {
 	}
 
 	public static String getHttp(String url) {
-		String result = "";
+		String result = "{}";
 		try {
 			URL realUrl;
 			realUrl = new URL(url);
@@ -1311,8 +1311,13 @@ public class Framework {
 		default:
 			break;
 		}
-		return workpath.replace("date", date).replace("record", type)
-				.replace("list", name);
+		if ("".equals(name)) {
+			return workpath.replace("date", date).replace("record", type)
+		.replace("/list.txt", name);
+		} else {
+			return workpath.replace("date", date).replace("record", type)
+					.replace("list", name);	
+		}
 	}
 
 	public static void clearFile(String path) {

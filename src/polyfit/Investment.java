@@ -31,6 +31,8 @@ public class Investment {
 	static double money = 0;
 
 	String infoString = "";
+	static String xchangeout = Framework.getPath("coin", "xchangeout", "");
+	static String xchangein = Framework.getPath("coin", "xchangein", "");
 
 	public Investment() {
 
@@ -160,63 +162,150 @@ public class Investment {
 			//param.put("coins", list);
 			double bar = param.optDouble("bar");
 			if (deltaCash / deltaCost > bar) {
-				boolean fold = false;
-				for (int i = 0; i < investments.size(); i++) {
-					investments.get(i).balance = investments.get(i).share * newNAV;
-				}
-				if (online) {
-					//JSONArray coins = param.getJSONArray("coins");
-					for (int i = 0; i < coins.length(); i++) {
-						JSONObject record = coins.getJSONObject(i);
-						if (aim.equals(record.getString("type"))) {
-							JSONObject recordInfo = null;
-							for (int j = 0; j < coinsInfo.length(); j++) {
-								recordInfo = coinsInfo.getJSONObject(j);
-								if (aim.equals(recordInfo.getString("type"))) {
-									break;
+				Double stocktotalshare = Investment.gettotalshare(investments, 0);
+				double realshare = stocktotalshare * share;
+				Investment trade = new Investment();
+				trade.fund = aim;
+				trade.cost = -realshare;
+				trade.infoString = "";
+				String actionPath = Framework.getPath("coin", "paint", aim + "_moneyRecord");
+				String tradeString = trade.marketOrderItem();
+				String id = tradeString.split(",")[0];
+				String serialno = verify.saveparam(xchangeout + "/" + tradeString, "");
+				boolean goon = false;
+				int cycTimes = 0;
+				String[] reply = null;
+				String returnString = "";
+				boolean out = false;
+				for (int i = 1; i <= 10; i++) {
+					try {
+						Thread.sleep(100);
+						File dir = new File(xchangein);
+						File[] files = dir.listFiles();
+						for (int j = 0; j < files.length; j++) {
+							returnString = files[j].getName();
+							reply = returnString.split(",");
+							String ID = reply[0];
+							if (id.equals(ID)) {
+								if ((new Long(System.currentTimeMillis()) - new Long(ID) < 5000)) {
+									if ("0".equals(reply[3])) {
+										goon = true;
+										serialno = files[j].getAbsolutePath();
+										tradeString += "," + reply[3] + "," + reply[4];
+									}									
+								} else {
+									tradeString += "," + reply[3] + "," + reply[4] + " butexceed5s";
 								}
+								Thread.sleep(100);
+								files[j].delete();
+								out = true;
+								break;
 							}
-							fold = recordInfo.getBoolean("fold");
-							int paint = record.getInt("paint");
-							if (paint > 0) {
-								paint -= 1;
-								record.put("paint", paint);
-							}
-							double money = record.getDouble("cost");
-							if (deltaCash < 0) {
-								System.out.println("loss butsell!" + deltaCash);
-							}
-							money += deltaCash;
-							record.put("cost", money);
-							record.put("NAV", newNAV);
-							double marketprice = gettotalmarketprice(investments, newNAV);
-							record.put("balance", marketprice);
-							double profit = money + marketprice * (1 - recordInfo.getDouble("inrates"));
-							record.put("cash", profit);
-							double start = recordInfo.getDouble("start");
-							double amount = record.getDouble("amount");
-							double nowAmount = start + (profit > 0 ? profit / recordInfo.getDouble("flag") : 0);
-							record.put("amount", amount > nowAmount ? amount : nowAmount);
-							coins.put(i, record);
-							verify.saveparam(path, coins.toString());
-							verify.appenddata(Framework.getPath("coin", "paint", "history"), coins.toString() + "\n");
-							System.out.println(record.toString());
-							break;
 						}
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+						String emsg = e.getMessage();
+						tradeString += ",-1" + "," + emsg.substring(0, emsg.indexOf("\n"));
+						out = true;
 					}
-					/*Investment.money += deltaCash;
-					double marketprice = gettotalmarketprice(investments, newNAV);
-					double profit = Investment.money + marketprice * 0.999;
-					double nowAmount =  20000 + (profit > 0 ? profit / 40 : 0);
-					Investment.amount = Investment.amount > nowAmount ? Investment.amount : nowAmount;
-					System.out.println(Investment.money + " + " + marketprice + " = " + profit + " price " + newNAV + " amount " + Investment.amount);
-					*/
+					cycTimes = i;
+					if (out) {
+						break;
+					}
 				}
-				rewrites(aim, investments, fold);
+				if (goon) {
+					boolean fold = false;
+					/*for (int i = 0; i < investments.size(); i++) {
+						investments.get(i).balance = investments.get(i).share * newNAV;
+					}*/
+					double marketprice = gettotalmarketprice(investments, newNAV);
+					if (online) {
+						//JSONArray coins = param.getJSONArray("coins");
+						for (int i = 0; i < coins.length(); i++) {
+							JSONObject record = coins.getJSONObject(i);
+							if (aim.equals(record.getString("type"))) {
+								JSONObject recordInfo = null;
+								for (int j = 0; j < coinsInfo.length(); j++) {
+									recordInfo = coinsInfo.getJSONObject(j);
+									if (aim.equals(recordInfo.getString("type"))) {
+										break;
+									}
+								}
+								fold = recordInfo.getBoolean("fold");
+								int paint = record.getInt("paint");
+								if (paint > 0) {
+									paint -= 1;
+									record.put("paint", paint);
+								}
+								double money = record.getDouble("cost");
+								if (deltaCash < 0) {
+									System.out.println("loss butsell!" + deltaCash);
+								}
+								money += deltaCash;
+								record.put("cost", money);
+								record.put("NAV", newNAV);
+								record.put("balance", marketprice);
+								double profit = money + marketprice * (1 - recordInfo.getDouble("inrates"));
+								record.put("cash", profit);
+								double start = recordInfo.getDouble("start");
+								double amount = record.getDouble("amount");
+								double nowAmount = start + (profit > 0 ? profit / recordInfo.getDouble("flag") : 0);
+								record.put("amount", amount > nowAmount ? amount : nowAmount);
+								coins.put(i, record);
+								verify.saveparam(path, coins.toString());
+								verify.appenddata(Framework.getPath("coin", "paint", "history"), coins.toString() + "\n");
+								System.out.println(record.toString());
+								break;
+							}
+						}
+						/*Investment.money += deltaCash;
+						double marketprice = gettotalmarketprice(investments, newNAV);
+						double profit = Investment.money + marketprice * 0.999;
+						double nowAmount =  20000 + (profit > 0 ? profit / 40 : 0);
+						Investment.amount = Investment.amount > nowAmount ? Investment.amount : nowAmount;
+						System.out.println(Investment.money + " + " + marketprice + " = " + profit + " price " + newNAV + " amount " + Investment.amount);
+						*/
+					}
+					rewrites(aim, investments, fold);
+				} else {
+					if (cycTimes == 10) {
+						tradeString += ",-2" + "," + "timeout";
+					} else if (!out) {
+						tradeString += ",-10" + "," + "unknow";
+					}
+				}
+				verify.appenddata(actionPath, tradeString + "\n");
 			} else {
 				System.out.println("deltaCash / deltaCost = " + (deltaCash / deltaCost));
 			}
 		}
+	}
+
+	public String marketOrderItem() {
+		id = "" + Framework.getNowTimestamp();
+		String orderString = "";
+		String side = "";
+		if (cost < 0) {
+			side = "sell";
+			cost = -cost;
+		} else {
+			side = "buy";
+		}
+		orderString += id + ",";//clOrdId
+		orderString += fund + ",";//instId
+		orderString += "cash,";//stdMode
+		orderString += side + ",";//side
+		orderString += "market,";//ordType
+		orderString += cost + ",";//sz
+		orderString += ",";//ccy
+		orderString += infoString + ",";//tag
+		orderString += ",";//posSide
+		orderString += ",";//px
+		orderString += ",";//reduceOnly
+		orderString += ",";//tgtCcy
+		orderString += "";//banAmend
+		return orderString;
 	}
 
 	public static void buy(String aim, double cost, double newNAV,
@@ -246,43 +335,101 @@ public class Investment {
 				//param.put("coins", list);
 				double open = param.optDouble("open");
 				if (cost > open) {
-					investments.add(aInvestment);
-					//JSONArray coins = param.getJSONArray("coins");
-					for (int i = 0; i < coins.length(); i++) {
-						JSONObject record = coins.getJSONObject(i);
-						if (aim.equals(record.getString("type"))) {
-							JSONObject recordInfo = null;
-							for (int j = 0; j < coinsInfo.length(); j++) {
-								recordInfo = coinsInfo.getJSONObject(j);
-								if (aim.equals(recordInfo.getString("type"))) {
+					Investment trade = new Investment();
+					trade.fund = aim;
+					trade.cost = cost;
+					trade.infoString = "";
+					String actionPath = Framework.getPath("coin", "paint", aim + "_moneyRecord");
+					String tradeString = trade.marketOrderItem();
+					String id = tradeString.split(",")[0];
+					String serialno = verify.saveparam(xchangeout + "/" + tradeString, "");
+					boolean goon = false;
+					int cycTimes = 0;
+					String[] reply = null;
+					String returnString = "";
+					boolean out = false;
+					for (int i = 1; i <= 10; i++) {
+						try {
+							Thread.sleep(100);
+							File dir = new File(xchangein);
+							File[] files = dir.listFiles();
+							for (int j = 0; j < files.length; j++) {
+								returnString = files[j].getName();
+								reply = returnString.split(",");
+								String ID = reply[0];
+								if (id.equals(ID)) {
+									if ((new Long(System.currentTimeMillis()) - new Long(ID) < 5000)) {
+										if ("0".equals(reply[3])) {
+											goon = true;
+											serialno = files[j].getAbsolutePath();
+											tradeString += "," + reply[3] + "," + reply[4];
+											investments.add(aInvestment);
+										}									
+									} else {
+										tradeString += "," + reply[3] + "," + reply[4] + " butexceed5s";
+									}
+									Thread.sleep(200);
+									files[j].delete();
+									out = true;
 									break;
 								}
 							}
-							fold = recordInfo.getBoolean("fold");
-							int paint = record.getInt("paint");
-							if (paint > 0) {
-								paint -= 1;
-								record.put("paint", paint);
-							}
-							double money = record.getDouble("cost");
-							money -= cost;
-							record.put("cost", money);
-							record.put("NAV", newNAV);
-							double marketprice = gettotalmarketprice(investments, newNAV);
-							record.put("balance", marketprice);
-							double profit = money + marketprice * (1 - inrates);
-							record.put("cash", profit);
-							double start = recordInfo.getDouble("start");
-							double amount = record.getDouble("amount");
-							double nowAmount = start + (profit > 0 ? profit / recordInfo.getDouble("flag") : 0);
-							record.put("amount", amount > nowAmount ? amount : nowAmount);
-							coins.put(i, record);
-							verify.saveparam(path, coins.toString());
-							verify.appenddata(Framework.getPath("coin", "paint", "history"), coins.toString() + "\n");
-							System.out.println(record.toString());
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+							String emsg = e.getMessage();
+							tradeString += ",-1" + "," + emsg.substring(0, emsg.indexOf("\n"));
+							out = true;
+						}
+						cycTimes = i;
+						if (out) {
 							break;
 						}
 					}
+					if (goon) {
+						double marketprice = gettotalmarketprice(investments, newNAV);
+						for (int i = 0; i < coins.length(); i++) {
+							JSONObject record = coins.getJSONObject(i);
+							if (aim.equals(record.getString("type"))) {
+								JSONObject recordInfo = null;
+								for (int j = 0; j < coinsInfo.length(); j++) {
+									recordInfo = coinsInfo.getJSONObject(j);
+									if (aim.equals(recordInfo.getString("type"))) {
+										break;
+									}
+								}
+								fold = recordInfo.getBoolean("fold");
+								int paint = record.getInt("paint");
+								if (paint > 0) {
+									paint -= 1;
+									record.put("paint", paint);
+								}
+								double money = record.getDouble("cost");
+								money -= cost;
+								record.put("cost", money);
+								record.put("NAV", newNAV);
+								record.put("balance", marketprice);
+								double profit = money + marketprice * (1 - inrates);
+								record.put("cash", profit);
+								double start = recordInfo.getDouble("start");
+								double amount = record.getDouble("amount");
+								double nowAmount = start + (profit > 0 ? profit / recordInfo.getDouble("flag") : 0);
+								record.put("amount", amount > nowAmount ? amount : nowAmount);
+								coins.put(i, record);
+								verify.saveparam(path, coins.toString());
+								verify.appenddata(Framework.getPath("coin", "paint", "history"), coins.toString() + "\n");
+								System.out.println(record.toString());
+								break;
+							}
+						}
+					} else {
+						if (cycTimes == 10) {
+							tradeString += ",-2" + "," + "timeout";
+						} else if (!out) {
+							tradeString += ",-10" + "," + "unknow";
+						}
+					}
+					verify.appenddata(actionPath, tradeString + "\n");
 						
 						/*Investment.money -= cost;
 						double marketprice = gettotalmarketprice(investments, newNAV);
@@ -370,7 +517,8 @@ public class Investment {
 	public static double gettotalmarketprice(ArrayList<Investment> investments, double newNAV) {
 		double result = 0;
 		for (int i = 0; i < investments.size(); i++) {
-			result += investments.get(i).share * newNAV;
+			investments.get(i).balance = investments.get(i).share * newNAV;
+			result += investments.get(i).balance;
 		}
 		return result;
 	}

@@ -479,24 +479,23 @@ public class verify {
 			String line = json.getString("ts") + "," + json.getString("idxPx");
 			if (line.equals(lines.get(lines.size() - 1))) {
 				System.out.println("add a same line!!! " + line);
-				return points = null;
-			} else {
-				verify.appenddata(Framework.getPath(temppath, "fund", type + "_data"), line + "\n");
-				if (linenum < num - 1) {
-					verify.appenddata(path, line + "\n");
-					return null;
-				}
-				lines.add(line);
-				points = loadpoints(lines, 0, num, datatype);
-				if (points == null || points.size() == 0) {
-					return null;
-				}
-				keeplines(path, num, line + "\n");// points.size();// 
-				/*jsonArray = getArrayFromNet(url);
-				points = getPointsFromArray(jsonArray, num);*/
-				//points = keeplinesIn(points, num, json);	
-				//points = verify.loadpoints(path, 0, num, datatype);
+				line = (Double.valueOf(lines.get(lines.size() - 1).split(",")[0]) + seconds * 1000) + "," + json.getString("idxPx");
 			}
+			verify.appenddata(Framework.getPath(temppath, "fund", type + "_data"), line + "\n");
+			if (linenum < num - 1) {
+				verify.appenddata(path, line + "\n");
+				return null;
+			}
+			lines.add(line);
+			points = loadpoints(lines, 0, num, datatype);
+			if (points == null || points.size() == 0) {
+				return null;
+			}
+			keeplines(path, num, line + "\n");// points.size();// 
+			/*jsonArray = getArrayFromNet(url);
+			points = getPointsFromArray(jsonArray, num);*/
+			//points = keeplinesIn(points, num, json);	
+			//points = verify.loadpoints(path, 0, num, datatype);
 		} else {
 			int end = num % 100;
 			int loop = num / 100 + end == 0 ? 0 : 1;
@@ -693,7 +692,7 @@ public class verify {
 		return jsonObject;
 	}
 
-	public static void saveparam(String path, String param) {
+	public static String saveparam(String path, String param) {
 		File pythonparam = new File(path);
 		BufferedWriter python;
 		try {
@@ -706,6 +705,7 @@ public class verify {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return path;
 	}
 
 	public static void savedata(String path, Polynomial p,
