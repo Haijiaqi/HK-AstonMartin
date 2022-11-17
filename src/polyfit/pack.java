@@ -30,7 +30,7 @@ public class pack {
 
 	static double totalInterval = 3.65;
 
-	static double discountRate = 0.5;
+	static double discountRate = 0.6667;
 
 	static double[] stagesweight = { 0.05, 0.9, 0.05 };
 
@@ -177,7 +177,7 @@ public class pack {
 		this.y = y;
 	}
 	public String toString() {
-		return this.x + ", " + this.y;
+		return verify.cutDouble(this.x, 6) + "\t" + verify.cutDouble(this.y, 6);
 	}
 	public String loadparam(String field) {
 		String path = "";

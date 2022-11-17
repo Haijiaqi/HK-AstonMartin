@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Scanner;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -29,6 +30,7 @@ public class Framework {
 	public static long todaytimestamp = 0;
 
 	public static String todate = "2020-08-21";
+	public static String todaydate = "2020-08-21";
 
 	public static String yesterdate = "2020-08-20";
 
@@ -47,13 +49,154 @@ public class Framework {
 	public static int listinfolength = 19;
 
 	public static int safeday = 6;
-
+	public static int startTimes = 0;
+	public static int ifback = 0;
+	public static String suffix = "";
+	public static String stData = basepath + "/fund/seconds";
+	public static String ndData = basepath + "/fund/minutes";
+	public static String stPtr = "";
+	public static int ndPtr = 0;
+	public static Long systime = new Long(0);
+	
+	
 	public static String logpath = "";
-
+	
 	// public static Logger log = Logger.getLogger("WORK");
-
+	
 	public static ArrayList<Investment> tradeList = new ArrayList<Investment>();
-
+	
+	public static String certifysuffix (String rawPath) {
+		String[] s = rawPath.split("/");
+		String dirPath = "";
+		for (int i = 1; i < s.length - 1; i++) {
+			dirPath += "/" + s[i];
+		}
+		File dir = new File(dirPath);
+		File[] files = dir.listFiles();
+		String name = s[s.length - 1];
+		int indexdot = name.indexOf(".");
+		String filenamepart = name.substring(0, indexdot);
+		String dryname = filenamepart;
+		String filename = "";
+		String patternName = "";
+		String result = "ok";
+		String ends = "";
+		int findj = -1;
+		int findi = 0;
+		for (int i = 0; i < 50; i++) {
+			findj = -1;
+			ends = (i == 0 ? "" : "-" + i);
+			patternName = "";
+			patternName += dryname + (i == 0 ? "" : "-" + i);
+			for (int j = 0; j < files.length; j++) {
+				filename = files[j].getName();
+				if (filename.indexOf(patternName) != -1) {
+					findj = j;
+					break;
+				}
+			}
+			if (findj != -1) {
+				continue;
+			} else {
+				break;
+			}
+		}
+		result = ends;
+		return result;
+	}
+	public static boolean initCoin(String todaystamp) {
+		String configPath = Framework.getPath("coin", "paint", "processInfo");
+		JSONObject params = verify.loadObject(configPath);
+		JSONArray coinsInfo = params.getJSONArray("coins");
+		String listPath = Framework.getPath("coin", "paint", "list");
+		JSONArray coins = verify.loadArray(listPath);
+		int st = params.optInt("st");
+		refreshtodaydate();
+		suffix = certifysuffix(Framework.getPath("coin", "paint", "history" + "-" + gettodaydate() + (ifback == 1 ? "-S" : "")));
+		if ("start".equals(todaystamp)) {
+			Scanner in = new Scanner(System.in);
+			System.out.println("restore data?[yes]");
+			String s = in.nextLine();
+			in.close();
+			if ("yes".equals(s)) {
+				for (int i = 0; i < coins.length(); i++) {
+					JSONObject record = coins.getJSONObject(i);
+					String aim = record.getString("type");
+					JSONObject recordInfo = null;
+					for (int j = 0; j < coinsInfo.length(); j++) {
+						recordInfo = coinsInfo.getJSONObject(j);
+						if (aim.equals(recordInfo.getString("type"))) {
+							break;
+						}
+					}
+					recordInfo.put("struct", 0);
+					record.put("amount", 40);
+					record.put("cost", 0);
+					record.put("balance", 0);
+					record.put("cash", 0);
+					coins.put(i, record);
+				}
+				verify.saveparam(listPath, coins.toString());
+				verify.saveparam(configPath, params.toString());
+			}
+		}
+		for (int i = 0; "start".equals(todaystamp) && i < coins.length(); i++) {
+			JSONObject item = (JSONObject)coins.get(i);
+			String type = item.getString("type");
+			String path = Framework.getPath("seconds", "fund", type);
+			ArrayList<String> lines = new ArrayList<>();
+			lines = verify.loadlines(path, 119, 120);
+		//in.close();
+			if (lines.size() == 0
+			 || (Double.valueOf(Framework.getNowTimestamp()) - Double.valueOf(lines.get(lines.size() - 1).split(",")[0]) > (st + 1) * 1000)
+			 || (Double.valueOf(Framework.getNowTimestamp()) - Double.valueOf(lines.get(lines.size() - 1).split(",")[0]) < 0)) {
+				if (ifback == 0) {
+					System.out.println("restore seconds data " + type);
+					String path1 = "";
+					String path2 = "";
+					path1 = Framework.getPath("seconds", "fund", type + "_keep");
+					path2 = Framework.getPath("seconds", "fund", type + "");
+					verify.copylines(path1, path2);
+					path1 = Framework.getPath("seconds", "fund", type + "_keep");
+					path2 = Framework.getPath("seconds", "fund", type + "_data");
+					//verify.copylines(path1, path2);
+					path1 = Framework.getPath("minutes", "fund", type + "_keep");
+					path2 = Framework.getPath("minutes", "fund", type + "");
+					verify.copylines(path1, path2);
+					path1 = Framework.getPath("minutes", "fund", type + "_keep");
+					path2 = Framework.getPath("minutes", "fund", type + "_data");
+					//verify.copylines(path1, path2);
+				} else {
+					String path2 = "";
+					path2 = Framework.getPath("seconds", "fund", type + "");
+					verify.saveparam(path2, "");
+					path2 = Framework.getPath("minutes", "fund", type + "");
+					verify.saveparam(path2, "");
+					path2 = Framework.getPath("balance", "balance", type);
+					verify.saveparam(path2, "");
+				}
+			}/* else {
+				String path1 = "";
+				String path2 = "";
+				path1 = Framework.getPath("seconds", "fund", type + "_data");
+				path2 = Framework.getPath("seconds", "fund", type + "");
+				verify.copylines(path1, path2, 0, 120);
+				path1 = Framework.getPath("minutes", "fund", type + "_data");
+				path2 = Framework.getPath("minutes", "fund", type + "");
+				verify.copylines(path1, path2, 0, 120);
+			}*/
+		}
+		return true;
+	}
+	public static boolean intime(Long time, int inter) {
+		Long delta = Math.abs(time - systime);
+		return delta < inter;
+	}
+	public static boolean intime(String time, int inter) {
+		Long timeLong = new Long(time);
+		Long delta = Math.abs(timeLong - systime);
+		return delta < inter;
+	}
 	public static boolean init(String todaystamp) {
 		File fund = new File(fundDir);
 		if (!fund.exists()) {
@@ -288,15 +431,16 @@ public class Framework {
 			int rd = param.optInt("rd");
 			int nd = param.optInt("nd");
 			int st = param.optInt("st");
+			double topratecut = verify.cutDouble(toprate, 6);
 			if (toprate > 0.99) {
 				Erate = 2 + 12 / (rd / nd);
-				System.out.println("                                                       TOP!!!: " + toprate + " Erate: " + Erate);
+				System.out.println("                               TOP!!!: " + topratecut + "\tErate: " + verify.cutDouble(Erate, 6));
 			} else {
 				if (outrate > 2) {
 					Erate = outrate - 1;
-					System.out.println("                                                       NO BUYING!!!: " + toprate + " TIMES: " + (Erate - 2));
+					System.out.println("                               NO BUYING!!!: " + topratecut + "\tTIMES: " + (verify.cutDouble(Erate, 6) - 2));
 				} else {
-					System.out.println("toprate: " + toprate + " Erate: " + Erate);
+					System.out.println("toprate: " + topratecut + "\tErate: " + verify.cutDouble(Erate, 6));
 				}
 			}
 			recordInfo.put("struct", Erate);
@@ -375,15 +519,20 @@ public class Framework {
 			int rd = param.optInt("rd");
 			int nd = param.optInt("nd");
 			int st = param.optInt("st");
-			if (toprate > 0.99) {
-				Erate = 2 + 12;// / (nd / st);
-				System.out.println("                                                       TOP!!!: " + toprate + " Erate: " + Erate);
+			double topratecut = verify.cutDouble(toprate, 6);
+			if (toprate > 0.99 || toprate < 0.01) {
+				if (toprate > 0.99) {
+					Erate = 2 + 12;// / (nd / st);
+				} else if (toprate < 0.01) {
+					//Erate = 2 + 1;// / (nd / st);}
+				}
+				System.out.println("                               TOP!!!: " + topratecut + "\tErate: " + verify.cutDouble(Erate, 6));
 			} else {
 				if (outrate > 2) {
 					Erate = outrate - 1;
-					System.out.println("                                                       NO BUYING!!!: " + toprate + " TIMES: " + (Erate - 2));
+					System.out.println("                               NO BUYING!!!: " + topratecut + "\tTIMES: " + (Erate - 2));
 				} else {
-					System.out.println("toprate: " + toprate + " Erate: " + Erate);
+					System.out.println("toprate: " + topratecut + "\tErate: " + verify.cutDouble(Erate, 6));
 				}
 			}
 			recordInfo.put("struct", Erate);
@@ -1225,14 +1374,19 @@ public class Framework {
 	}
 
 	public static long getNowTimestamp() {
-		return System.currentTimeMillis();
+		if (ifback == 0) {
+			return System.currentTimeMillis();
+		} else {
+			return systime;
+		}
 	}
 
 	public static long timeToGo(int seconds) {
 		long inter = seconds * 1000;
 		for (int i = 0; true; i++) {
-			if ((new Long(System.currentTimeMillis()) - new Long(1667577600) * 1000) % inter < 23) {
-				return System.currentTimeMillis();
+			Long time = Framework.getNowTimestamp();
+			if ((time - new Long(1667577600) * 1000) % inter < 23) {
+				return time;
 			} else {
 				try {
 					Thread.sleep(23);
@@ -1245,7 +1399,8 @@ public class Framework {
 	}
 	public static boolean ifNewTime(int seconds) {
 		long inter = seconds * 1000;
-		if ((new Long(System.currentTimeMillis()) - new Long(1667577600) * 1000) % inter < 1000) {
+		Long time = Framework.getNowTimestamp();
+		if ((time - new Long(1667577600) * 1000) % inter < 1000) {
 			return true;
 		} else {
 			return false;
@@ -1258,6 +1413,14 @@ public class Framework {
 
 	public static String gettodate() {
 		return todate;
+	}
+	public static String gettodaydate() {
+		return todaydate;
+	}
+	public static String refreshtodaydate() {
+		Long today = getNowTimestamp();// - 86400 * 1000;
+		todaydate = stampToDate(String.valueOf(today));
+		return todaydate;
 	}
 
 	public static String getyesterdate() {
@@ -1274,7 +1437,7 @@ public class Framework {
 
 	public static String getPath(String date, String type, String name) {
 		if ("balance".equals(type)) {
-			return balanceDir + "/" + name + ".txt";
+			return balanceDir + "/" + name + (Framework.ifback == 1 ? "-S" : "") + ".txt";
 		}
 		switch (date) {
 		case "today":

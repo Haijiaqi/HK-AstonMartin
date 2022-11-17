@@ -461,7 +461,7 @@ public class Fund {
 				}				
 			}
 		}
-		System.out.println("updn: " + result.r + ", " + result.val);
+		System.out.println("updn: " + verify.cutDouble(Erate, 6) + "\t" + verify.cutDouble(result.val, 6));
 		if (paint > 0) {
 			verify.saveparam(Framework.getPath("coin", "paint", "weightup"), "");
 			verify.saveparam(Framework.getPath("coin", "paint", "weightdn"), "");
@@ -692,7 +692,7 @@ public class Fund {
 			Erate *= immediaterisk;
 			conclusion = reliability * Erate / (1 + fee);
 			System.out.println("  /|\\  ");
-			System.out.println("   |    " + immediaterisk + ", " + Erate);
+			System.out.println("   |    " + verify.cutDouble(immediaterisk, 6) + "\t" + verify.cutDouble(Erate, 6));
 		} else {
 			Erate = result.val;
 			if (Erate > -1) {
@@ -705,7 +705,7 @@ public class Fund {
 				Erate = -1;
 			}
 			System.out.println("   |    ");
-			System.out.println("  \\|/   " + (-(immediaterisk - 2)) + ", " + Erate);
+			System.out.println("  \\|/   " + verify.cutDouble((-(immediaterisk - 2)), 6) + "\t" + verify.cutDouble(Erate, 6));
 			conclusion = reliability * Erate / (1 + fee);
 		}
 		if (Erate > -1 && Erate < 0 ) {
@@ -818,9 +818,9 @@ public class Fund {
 			//if (lasttoprate > standard) {
 				// 高于低水位，补段除以水位线补段
 			if (lasttoprate < anti) {
-				return lasttoprate / (antirate);
+				result = lasttoprate / (antirate);
 			}
-			return (1 - lasttoprate) / (standard);
+			result = (1 - lasttoprate) / (standard);
 			/*} else {
 				// 低于低水位，置信升率为1
 				return 1; // (standard - lasttoprate) / (standard);
@@ -830,15 +830,17 @@ public class Fund {
 			//if (lasttoprate < (1 - standard)) {
 				// 低于低水位的对称线，本段除以低水位补长度
 			if (lasttoprate > (1 - anti)) {
-				return (1 - lasttoprate) / (antirate);
+				result = (1 - lasttoprate) / (antirate);
 			}
-			return lasttoprate / (standard); // (lasttoprate - standard)
+			result = lasttoprate / (standard); // (lasttoprate - standard)
 														// / (1 - standard);
 			/*} else {
 				// 高于低水位的对称线，置信降率为1
 				return 1; // (lasttoprate) / (standard);
 			}*/
 		}
+		result = result * result;
+		return result > 2 ? 2 : result;
 	}
 
 	// 信跌不信涨。爬一步加0.5，跌一步减1。连跌大于0，输出原值，连涨输出0。

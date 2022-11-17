@@ -264,10 +264,23 @@ public class verify {
 			}
 			BufferedReader br = new BufferedReader(new FileReader(path));
 			String aline = null;
-			for (int i = 0; i < end && (aline = br.readLine()) != null; i++) {
-				if (i >= start) {
-					points.add(aline);
+			String preline = null;
+			int record = (int)Math.abs(start);
+			if (start >= 0) {				
+				for (int i = 0; i < end && (aline = br.readLine()) != null; i++) {
+					if (i >= start) {
+						points.add(aline);
+					}
 				}
+			} else {			
+				String[] lastarray = new String[record];
+				for (int i = 0; (aline = br.readLine()) != null; i++) {
+					for (int j = 0; j < record; j++) {
+						lastarray[j] = lastarray[j + 1];
+					}
+					lastarray[record - 1] = aline;
+				}
+				points.add(lastarray[0]);
 			}
 			br.close();
 			Thread.sleep(5);
@@ -275,6 +288,55 @@ public class verify {
 			e.printStackTrace();
 		}
 		return points;
+	}
+	public static String loadline(String path, Long key) {
+		String result = "";
+		String preline = "";
+		String pretime = "0";
+		try {
+			File pointfile = new File(path);
+			if (!pointfile.exists()) {
+				return "";
+			}
+			BufferedReader br = new BufferedReader(new FileReader(path));
+			String aline = "";
+			for (int i = 0; preline != null; i++) {
+				aline = br.readLine();
+				String time = aline == null ? "" : aline.split(",")[0];
+				int preflag = intime(key, pretime, 2250);
+				if (preflag > 0) {
+					break;
+				}
+				int nowflag = intime(key, time, 2250);
+				if (nowflag != 0 && preflag == 0) {
+					result = preline;
+					break;
+				}
+				pretime = time;
+				preline = aline;
+			}
+			br.close();
+			Thread.sleep(5);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (preline != null) {
+			return result;			
+		} else {
+			return null;
+		}
+	}
+	public static int intime(Long a, String time, int inter) {
+		double timeLong = "".equals(time) ? 0 : Double.valueOf(time);
+		double realdelta = timeLong - a;
+		double delta = Math.abs(realdelta);
+		if (delta < inter) {
+			return 0;
+		} else if (realdelta < 0) {
+			return -1;
+		} else {
+			return 1;
+		}
 	}
 	public static ArrayList<pack> loadpoints(ArrayList<String> path, int start, int end, int type) {
 		ArrayList<pack> points = new ArrayList<pack>();
@@ -447,6 +509,35 @@ public class verify {
 		}
 		return 0;
 	}
+	public static int copylines(String path1, String path2, int start, int end) {
+		try {
+			verify.saveparam(path2, "");
+			BufferedReader bt = new BufferedReader(new FileReader(path1));
+			String alinet = null;
+			ArrayList<String> lines = new ArrayList<String>();
+			for (int i = 0; (alinet = bt.readLine()) != null; i++) {
+				if (i >= start) {
+					lines.add(alinet);					
+				}
+				if (i >= end) {
+					break;
+				}
+			}
+			bt.close();
+			Thread.sleep(5);
+			BufferedWriter bw = new BufferedWriter(new FileWriter(
+					path2));
+			for (int j = 0; j < lines.size(); j++) {
+				bw.write(lines.get(j) + "\n");
+			}
+			bw.close();
+			Thread.sleep(5);
+			return lines.size();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
 	public static ArrayList<pack> keeplinesIn(ArrayList<pack> pointst, int linenum, JSONObject json) {
 		ArrayList<pack> newpointst = new ArrayList<pack>();
 		int length = pointst.size();
@@ -466,22 +557,44 @@ public class verify {
 		String url = "";
 		JSONObject json = null;
 		JSONArray jsonArray = null;
-		if (addORall) {
+		double channel = seconds / 60.0;
+		if ((int)channel < channel || seconds < 60) {
 			String path = Framework.getPath(temppath, "fund", type);
 			ArrayList<String> lines = new ArrayList<>();
 			lines = loadlines(path, 1, num + 1);
-			url = "https://www.okx.com/api/v5/market/index-tickers?instId=BTC-USD".replace("instId=BTC-USD", instId);
-			//url = ("https://www.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1s&limit=120").replace("BTCUSDT", type.replace("-", ""));
-			json = getInfoFromNet(url);
-			jsonArray = json.getJSONArray("data");
-			json = (JSONObject)jsonArray.get(0);
-			int linenum = lines.size();
-			String line = json.getString("ts") + "," + json.getString("idxPx");
-			if (line.equals(lines.get(lines.size() - 1))) {
-				System.out.println("add a same line!!! " + line);
-				line = (Double.valueOf(lines.get(lines.size() - 1).split(",")[0]) + seconds * 1000) + "," + json.getString("idxPx");
+			String line = "";
+			String value = "";
+			String x = "";
+			if (Framework.ifback == 0) {
+				url = "https://www.okx.com/api/v5/market/index-tickers?instId=BTC-USD".replace("instId=BTC-USD", instId);
+				//url = ("https://www.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1s&limit=120").replace("BTCUSDT", type.replace("-", ""));
+				json = getInfoFromNet(url);
+				jsonArray = json.getJSONArray("data");
+				json = (JSONObject)jsonArray.get(0);
+				value = json.getString("idxPx");
+				line = json.getString("ts") + "," + value;
+			} else {
+				line = verify.loadline(Framework.getPath(temppath, "fund", type + "_data"), Framework.systime);
+				if (line == null || "".equals(line)) {//.indexOf(",") != -1) {
+					value = line;					
+				} else {//.indexOf(",") != -1) {
+					value = line.split(",")[1];					
+				}
 			}
-			verify.appenddata(Framework.getPath(temppath, "fund", type + "_data"), line + "\n");
+			int linenum = lines.size();
+			if (value != null) {
+				if ("".equals(value) || linenum != 0 && line.equals(lines.get(lines.size() - 1))) {
+					System.out.println("add a bad line!!! " + line);
+					String[] xy = lines.get(lines.size() - 1).split(",");
+					line = (new Long(xy[0]) + seconds * 1000) + "," + ("".equals(value) ? xy[1] : value);
+				}
+			} else {
+				Framework.systime = new Long(0);
+				return null;
+			}
+			if (Framework.ifback == 0) {
+				verify.appenddata(Framework.getPath(temppath, "fund", type + "_data"), line + "\n");				
+			}
 			if (linenum < num - 1) {
 				verify.appenddata(path, line + "\n");
 				return null;
@@ -511,8 +624,9 @@ public class verify {
 			for (int i = 1; i <= loop; i++) {
 				long top = new Long((i + 1) * seconds);
 				long tail = new Long((i) * seconds);
-				before = System.currentTimeMillis() - 101 * top * 1000;
-				after = System.currentTimeMillis() - 100 * tail * 1000;
+				Long time = Framework.getNowTimestamp();
+				before = time - 101 * top * 1000;
+				after = time - 100 * tail * 1000;
 				url = urlHistory + "&before=" + before + "&after=" + after;
 				json = getInfoFromNet(url);
 				jsonArray.putAll(json.getJSONArray("data"));
@@ -529,6 +643,9 @@ public class verify {
 					points.add(point);
 				}
 			}
+		}
+		if (points.get(points.size() - 1).getY() == 0) {
+			System.out.println("may all zero!!!");
 		}
 		return points;
 	}

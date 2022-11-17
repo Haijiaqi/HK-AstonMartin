@@ -152,7 +152,6 @@ public class Investment {
 			double deltaCost = preCost - nowCost;
 			double deltaCash = nowCash - preCash;
 			deltaCost = deltaCost == 0 ? 1 : deltaCost;
-			System.out.println(" " + preCost + " " + nowCost + " " + nowCash + " " + preCash);
 			String path = Framework.getPath("coin", "paint", "processInfo");
 			JSONObject param = verify.loadObject(path);
 			//path = Framework.getPath("coin", "paint", "listInfo");
@@ -168,16 +167,18 @@ public class Investment {
 				trade.fund = aim;
 				trade.cost = -realshare;
 				trade.infoString = "";
-				String actionPath = Framework.getPath("coin", "paint", aim + "_moneyRecord");
+				String actionPath = Framework.getPath("coin", "paint", aim + "_moneyRecord" + "-" + Framework.gettodaydate() + (Framework.ifback == 1 ? "-S" : "") + Framework.suffix);
 				String tradeString = trade.marketOrderItem();
+				if (Framework.ifback == 0) {
+					String serialno = verify.saveparam(xchangeout + "/" + tradeString, "");					
+				}
 				String id = tradeString.split(",")[0];
-				String serialno = verify.saveparam(xchangeout + "/" + tradeString, "");
 				boolean goon = false;
 				int cycTimes = 0;
 				String[] reply = null;
 				String returnString = "";
 				boolean out = false;
-				for (int i = 1; i <= 10; i++) {
+				for (int i = 1; Framework.ifback == 0 && i <= 10; i++) {
 					try {
 						Thread.sleep(100);
 						File dir = new File(xchangein);
@@ -187,7 +188,7 @@ public class Investment {
 							reply = returnString.split(",");
 							String ID = reply[0];
 							if (id.equals(ID)) {
-								if ((new Long(System.currentTimeMillis()) - new Long(ID) < 5000)) {
+								if ((Framework.getNowTimestamp() - new Long(ID) < 5000)) {
 									if ("0".equals(reply[3])) {
 										goon = true;
 									}									
@@ -215,7 +216,7 @@ public class Investment {
 						break;
 					}
 				}
-				if (goon) {
+				if (goon || Framework.ifback == 1) {
 					boolean fold = false;
 					/*for (int i = 0; i < investments.size(); i++) {
 						investments.get(i).balance = investments.get(i).share * newNAV;
@@ -255,7 +256,7 @@ public class Investment {
 								record.put("amount", amount > nowAmount ? amount : nowAmount);
 								coins.put(i, record);
 								verify.saveparam(path, coins.toString());
-								verify.appenddata(Framework.getPath("coin", "paint", "history"), coins.toString() + "\n");
+								verify.appenddata(Framework.getPath("coin", "paint", "history" + "-" + Framework.gettodaydate() + (Framework.ifback == 1 ? "-S" : "") + Framework.suffix), coins.toString() + "\n");
 								System.out.println(record.toString());
 								break;
 							}
@@ -278,7 +279,7 @@ public class Investment {
 				}
 				verify.appenddata(actionPath, tradeString + "\n");
 			} else {
-				System.out.println("deltaCash / deltaCost = " + (deltaCash / deltaCost));
+				System.out.println("deltaCash / deltaCost = " + verify.cutDouble((deltaCash / deltaCost), 6));
 			}
 		}
 	}
@@ -340,16 +341,18 @@ public class Investment {
 					trade.fund = aim;
 					trade.cost = cost;
 					trade.infoString = "";
-					String actionPath = Framework.getPath("coin", "paint", aim + "_moneyRecord");
+					String actionPath = Framework.getPath("coin", "paint", aim + "_moneyRecord" + "-" + Framework.gettodaydate() + (Framework.ifback == 1 ? "-S" : "") + Framework.suffix);
 					String tradeString = trade.marketOrderItem();
 					String id = tradeString.split(",")[0];
-					String serialno = verify.saveparam(xchangeout + "/" + tradeString, "");
+					if (Framework.ifback == 0) {
+						String serialno = verify.saveparam(xchangeout + "/" + tradeString, "");					
+					}
 					boolean goon = false;
 					int cycTimes = 0;
 					String[] reply = null;
 					String returnString = "";
 					boolean out = false;
-					for (int i = 1; i <= 10; i++) {
+					for (int i = 1; Framework.ifback == 0 && i <= 10; i++) {
 						try {
 							Thread.sleep(100);
 							File dir = new File(xchangein);
@@ -359,7 +362,7 @@ public class Investment {
 								reply = returnString.split(",");
 								String ID = reply[0];
 								if (id.equals(ID)) {
-									if ((new Long(System.currentTimeMillis()) - new Long(ID) < 5000)) {
+									if ((Framework.getNowTimestamp() - new Long(ID) < 5000)) {
 										if ("0".equals(reply[3])) {
 											goon = true;
 											investments.add(aInvestment);
@@ -388,7 +391,10 @@ public class Investment {
 							break;
 						}
 					}
-					if (goon) {
+					if (goon || Framework.ifback == 1) {
+						if (Framework.ifback == 1) {
+							investments.add(aInvestment);
+						}
 						double marketprice = gettotalmarketprice(investments, newNAV);
 						for (int i = 0; i < coins.length(); i++) {
 							JSONObject record = coins.getJSONObject(i);
@@ -419,7 +425,7 @@ public class Investment {
 								record.put("amount", amount > nowAmount ? amount : nowAmount);
 								coins.put(i, record);
 								verify.saveparam(path, coins.toString());
-								verify.appenddata(Framework.getPath("coin", "paint", "history"), coins.toString() + "\n");
+								verify.appenddata(Framework.getPath("coin", "paint", "history" + "-" + Framework.gettodaydate() + (Framework.ifback == 1 ? "-S" : "") + Framework.suffix), coins.toString() + "\n");
 								System.out.println(record.toString());
 								break;
 							}

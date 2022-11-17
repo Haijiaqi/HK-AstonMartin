@@ -47,70 +47,8 @@ public class main {
 
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
-		/*String thispath = Framework.basepath + "/fund/bitcoin/okex15.txt";
-		String path = Framework.getPath("balance", "balance", "BTC");
-		ArrayList<pack> outpoints = verify.loadpoints(thispath, 0, 120, -1);
-		Polynomial aFund = new Polynomial();
-		aFund.analysis(outpoints, true);
-		verify.getData(false, "BTC-USD", 15 * 60, 120, -1);*/
-		/*JSONObject jo = new JSONObject();
-		JSONArray ja = new JSONArray();
-		jo.put("On", "true");
-		jo.put("rd", 12 * 60 * 60);
-		jo.put("nd", 15 * 60);
-		jo.put("st", 15);
-		JSONObject BTC = new JSONObject();
-		BTC.put("type", "BTC");
-		BTC.put("name", "BTC");
-		BTC.put("order", 2);
-		BTC.put("amount", 12000);
-		BTC.put("paint", 0);
-		BTC.put("struct", "@19000|2@21000|1@26000|0");
-		JSONObject YFII = new JSONObject();
-		YFII.put("type", "YFII");
-		YFII.put("name", "YFII");
-		YFII.put("order", 2);
-		YFII.put("amount", 12000);
-		YFII.put("paint", 0);
-		YFII.put("struct", "@19000|2@21000|1@26000|0");
-		ja.put(BTC);
-		ja.put(YFII);
-		jo.put("coins", ja);
-		System.out.println(jo.toString());*/
-		// Java program to demonstrate working of Scanner in Java
-		// Using Scanner for Getting Input from User
-		Scanner in = new Scanner(System.in);
-		System.out.println("resore seconds data?[yes?]");
-		String s = in.nextLine();
-		in.close();
-		if ("yes".equals(s)) {
-			String path1 = "";
-			String path2 = "";
-			path1 = Framework.getPath("seconds", "fund", "BTC-USDT_keep");
-			path2 = Framework.getPath("seconds", "fund", "BTC-USDT");
-			verify.copylines(path1, path2);
-			path1 = Framework.getPath("seconds", "fund", "BTC-USDT_keep");
-			path2 = Framework.getPath("seconds", "fund", "BTC-USDT_data");
-			verify.copylines(path1, path2);
-			path1 = Framework.getPath("seconds", "fund", "YFII-USDT_keep");
-			path2 = Framework.getPath("seconds", "fund", "YFII-USDT");
-			verify.copylines(path1, path2);
-			path1 = Framework.getPath("seconds", "fund", "YFII-USDT_keep");
-			path2 = Framework.getPath("seconds", "fund", "YFII-USDT_data");
-			verify.copylines(path1, path2);
-			path1 = Framework.getPath("minutes", "fund", "BTC-USDT_keep");
-			path2 = Framework.getPath("minutes", "fund", "BTC-USDT");
-			verify.copylines(path1, path2);
-			path1 = Framework.getPath("minutes", "fund", "BTC-USDT_keep");
-			path2 = Framework.getPath("minutes", "fund", "BTC-USDT_data");
-			verify.copylines(path1, path2);
-			path1 = Framework.getPath("minutes", "fund", "YFII-USDT_keep");
-			path2 = Framework.getPath("minutes", "fund", "YFII-USDT");
-			verify.copylines(path1, path2);
-			path1 = Framework.getPath("minutes", "fund", "YFII-USDT_keep");
-			path2 = Framework.getPath("minutes", "fund", "YFII-USDT_data");
-			verify.copylines(path1, path2);
-		}
+		Framework.systime = new Long("1668580655000");
+		Framework.initCoin("start");
 		for (int i = 0; true; i++) {
 			String configPath = Framework.getPath("coin", "paint", "processInfo");
 			JSONObject params = verify.loadObject(configPath);
@@ -135,8 +73,15 @@ public class main {
 				int rd = params.optInt("rd");
 				int nd = params.optInt("nd");
 				int st = params.optInt("st");
-				System.out.println("-------------------------------------------------------");
-				System.out.println(Framework.timeToGo(st));
+				System.out.println("----------------------------");
+				if (Framework.ifback == 0) {
+					System.out.println(Framework.timeToGo(st));
+				} else {
+					System.out.println(Framework.systime);
+				}
+				if (Framework.ifNewTime(86400)) {
+					Framework.initCoin("");
+				}
 				if (Framework.ifNewTime(nd)) {
 					//getrun days 15minutes 15seconds
 					flag = 11;
@@ -174,6 +119,13 @@ public class main {
 						e1.printStackTrace();
 					}
 					Framework.runhours(coins, params, rd);
+				}
+				if (Framework.ifback == 1) {
+					if (Framework.systime != 0) {
+						Framework.systime += st * 1000;						
+					} else {
+						break;
+					}
 				}
 				/*switch (flag) {
 					case 111:

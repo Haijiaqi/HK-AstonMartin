@@ -2,6 +2,7 @@ import demjson
 import os
 import requests
 import time
+import shutil
 def getparam(index):
     basepath = os.getcwd() + '/' + "D7"
     fp = open(basepath + ".txt")#D:\\Aproject\\params.txt", 'r')
@@ -121,9 +122,10 @@ name = 'okextest.txt'
 #start = 1655481600000
 basepath = os.getcwd() + '/'#fund/coin/'
 param = loadobj(basepath + "work/coin/paint/processInfo.txt")
-st = param['st']
-nd = param['nd']
+st = 20#param['st']
+nd = 60#param['nd']
 coins = param['coins']
+print("started...")
 while True:
     url = 'https://www.okx.com/api/v5/market/index-tickers?instId='
     pause(st)

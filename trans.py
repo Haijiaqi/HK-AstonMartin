@@ -2,105 +2,68 @@ import demjson
 import os
 import requests
 import time
-def getparam(index):
-    basepath = os.getcwd() + '/' + "D7"
-    fp = open(basepath + ".txt")#D:\\Aproject\\params.txt", 'r')
-    result = ''
-    for aline in fp:
-        result += aline
-    result = demjson.decode(result)
-    fi = open(basepath + "points.txt", 'w')
-    #result = demjson.decode('{' + result + '}')[index]
-    stamp = 1665412800
-    for key in result["data"]["body"]["data"]["points"].items():
-        #print(key[0], key[1], sep=":")
-        aline = key[0] + "," + str(key[1]["v"][0])
-        print(aline)
-        '''amp + 900
-        if stamp > 1666017550:  https://www.okx.com/api/v5/market/history-index-candles?instId=BTC-USD&bar=15m&before=1655481600000&after=1655568000000
-        break'''
-        fi.write(aline + '\n')
-    fi.close()
-    #print(result["data"]["body"]["data"]["points"]["1665414600"]["v"][4])
-    return result
-def getparamfromnet(rawdata, path):
-    result = demjson.decode(rawdata)
-    fi = open(path, 'a')
-    #result = demjson.decode('{' + result + '}')[index]
-    stamp = 1665412800
-    arrays = []
-    for key in result["data"]:
-        #print(key[0], key[1], sep=":")
-        aline = key[0] + "," + str((eval(key[1]) + eval(key[2]) + eval(key[3]) + eval(key[4])) / 4)
-        '''amp + 900
-        if stamp > 1666017550:  https://www.okx.com/api/v5/market/history-index-candles?instId=BTC-USD&bar=15m&before=1655481600000&after=1655568000000
-        break'''
-        arrays.append(aline)
-    arrays.reverse()
-    i = len(arrays)
-    for aline in arrays:
-        fi.write(aline + '\n')
-    fi.close()
-    #print(result["data"]["body"]["data"]["points"]["1665414600"]["v"][4])
-    return result
-    
-def getHTMLText(url):
-    try:
-        #kv = {'Referer':'http://fund.eastmoney.com/data/fundranking.html'}
-        r = requests.get(url)#, headers = kv)
-        r.raise_for_status()
-        r.encoding = r.apparent_encoding
-        return r.text
-    except:
-        return ""
-        
-def turnpage(url, start, inter, page):
-    pre = "before=" + str(start) + '&'
-    pi = "before=" + str(start + inter * (page - 1) - 1) + '&'
-    url = url.replace(pre, pi)
-    pre = "after=" + str(start + inter)
-    pi = "after=" + str(start + inter + inter * (page - 1) - 1)
-    print(pi)
-    return url.replace(pre, pi)
+import json
 
+import okx.Account_api as Account
+import okx.Funding_api as Funding
+import okx.Market_api as Market
+import okx.Public_api as Public
+import okx.Trade_api as Trade
+import okx.status_api as Status
+import okx.subAccount_api as SubAccount
+import okx.TradingData_api as TradingData
+import okx.Broker_api as Broker
+import okx.Convert_api as Convert
+import okx.FDBroker_api as FDBroker
+import okx.Rfq_api as Rfq
+import okx.TradingBot_api as TradingBot
+import okx.Finance_api as Finance
 
-basepath = os.getcwd() + '/work/coin/'
-xchangeout = basepath + "xchangeout"
-xchangein = basepath + "xchangein"
-while True:
-    list = os.listdir(xchangeout)
-    i = 0
-    for line in list:
-        text = line.split(",")
-        ts = eval(text[0])
-        nowtime = time.time() * 1000 - 86400
-        if nowtime - ts < 5000:
+if __name__ == '__main__':
+    api_key = "9df9b09b-3ca0-4184-9f33-970cabdffa9e"
+    secret_key = "1EF3E974E3F46008BF80AC22129322CA"
+    passphrase = "OKEx@155818"
+    # flag是实盘与模拟盘的切换参数 flag is the key parameter which can help you to change between demo and real trading.
+    flag = '1'  # 模拟盘 demo trading
+    # flag = '0'  # 实盘 real trading
+
+    # trade api
+    tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
+    basepath = os.getcwd() + '/work/coin/'
+    xchangeout = basepath + "xchangeout"
+    xchangein = basepath + "xchangein"
+    print("started...")
+    while True:
+        list = os.listdir(xchangeout)
+        i = 0
+        for line in list:
+            text = line.split(",")
+            ts = eval(text[0])
+            nowtime = time.time() * 1000 - 86400
+            ifdeal = False
+            if nowtime - ts < 5000 & nowtime - ts > 0:
+                # 下单  Place Order
+                # result = tradeAPI.place_order(instId='BTC-USDT-210326', tdMode='cross', side='sell', posSide='short',
+                #                               ordType='market', sz='100',tgtCcy='',banAmend='')
+                # 获取订单信息  Get Order Details
+                # result = tradeAPI.get_orders('BTC', '257173039968825345')#-USDT-201225
+                time.sleep(0.1)
+                returnString = text[0] + "," + "ordId" + "," + "tag" + "," + "0" + "," + "success"
+                print(line + "\nfileNETdone!" + returnString)
+                ifdeal = True
+            else:
+                nowtime = time.time() * 1000 - 86400
+                if ts - nowtime > 5000:
+                    pass
+                else:
+                    returnString = text[0] + "," + "ordId" + "," + "tag" + "," + "-4" + "," + "exceed5s"
+                    print(line + "\nEXCEED!" + returnString)
+                    ifdeal = True
+            if ifdeal:
+                fi = open(xchangein + "/" + returnString, 'w')
+                fi.close()
+                abspath = xchangeout + "/" + line
+                if os.path.exists(abspath):
+                    os.remove(abspath)
             time.sleep(0.1)
-            returnString = text[0] + "," + "ordId" + "," + "tag" + "," + "0" + "," + "success"
-            print(line + "\nfileNETdone!" + returnString)
-        else:
-            returnString = text[0] + "," + "ordId" + "," + "tag" + "," + "-4" + "," + "exceed5s"
-            print(line + "\nEXCEED!" + returnString)
-        fi = open(xchangein + "/" + returnString, 'w')
-        fi.close()
-        abspath = xchangeout + "/" + line
-        if os.path.exists(abspath):
-            os.remove(abspath)
-        time.sleep(0.1)
-        i += 1
-    
-'''name = 'okex15.txt'
-inter = 86400000
-start = 1655481600000
-fi = open(basepath + name, 'w')
-fi.write('')
-fi.close()
-for i in range(1000):
-    if (i * inter + start) < time.time() * 1000:
-        url = turnpage('https://www.okx.com/api/v5/market/history-index-candles?instId=BTC-USD&bar=15m&before=1655481600000&after=1655568000000', start, inter, i + 1)
-        text = getHTMLText(url)
-        time.sleep(0.5)
-        getparamfromnet(text, basepath + name)
-
-#text = getparam(0)
-'''
+            i += 1
