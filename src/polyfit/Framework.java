@@ -535,7 +535,7 @@ public class Framework {
 			double topratecut = verify.cutDouble(toprate, 6);
 			if (toprate > 0.99 || toprate < 0.01) {
 				if (toprate > 0.99) {
-					Erate = 2 + 12;// / (nd / st);
+					Erate = 2 + 8;// / (nd / st);
 				} else if (toprate < 0.01) {
 					//Erate = 2 + 1;// / (nd / st);}
 				}

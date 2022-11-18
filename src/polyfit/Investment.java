@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 
 import org.json.JSONArray;
@@ -162,7 +163,7 @@ public class Investment {
 			double bar = param.optDouble("bar");
 			if (deltaCash / deltaCost > bar) {
 				Double stocktotalshare = Investment.gettotalshare(investments, 0);
-				double realshare = Math.round(stocktotalshare * share * 10000000) / 10000000;
+				double realshare = stocktotalshare * share; // Math.round(stocktotalshare * share * 10000000) / 10000000.0;
 				Investment trade = new Investment();
 				trade.fund = aim;
 				trade.cost = -realshare;
@@ -191,6 +192,7 @@ public class Investment {
 								if ((Framework.getNowTimestamp() - new Long(ID) < 5000)) {
 									if ("0".equals(reply[3])) {
 										goon = true;
+										newNAV = Double.valueOf(reply[2]);
 									}									
 									tradeString += "," + reply[3] + "," + reply[4];
 								} else {
@@ -241,14 +243,15 @@ public class Investment {
 									record.put("paint", paint);
 								}
 								double money = record.getDouble("cost");
-								if (deltaCash < 0) {
-									System.out.println("loss butsell!" + deltaCash);
-								}
-								money += deltaCash;
+								double handrate = (1 - recordInfo.getDouble("inrates"));
+								double realDeltaCash = newNAV * realshare * handrate;
+								money += realDeltaCash;
+								double diff = realDeltaCash - deltaCash;
+								investments.get(0).cash += diff;
 								record.put("cost", money);
 								record.put("NAV", newNAV);
 								record.put("balance", marketprice);
-								double profit = money + marketprice * (1 - recordInfo.getDouble("inrates"));
+								double profit = money + marketprice * handrate;
 								record.put("cash", profit);
 								double start = recordInfo.getDouble("start");
 								double amount = record.getDouble("amount");
@@ -273,8 +276,13 @@ public class Investment {
 				} else {
 					if (cycTimes == 10) {
 						tradeString += ",-2" + "," + "timeout";
-					} else if (!out) {
-						tradeString += ",-10" + "," + "unknow";
+					} else {
+						if (cycTimes < 10) {
+							tradeString += ",-9" + "," + "request but takeout";
+						}
+						if (!out) {
+							tradeString += ",-10" + "," + "unknow";
+						}
 					}
 				}
 				verify.appenddata(actionPath, tradeString + "\n");
@@ -299,7 +307,10 @@ public class Investment {
 		orderString += "cash,";//stdMode 2
 		orderString += side + ",";//side 3
 		orderString += "market,";//ordType 4
-		orderString += cost + ",";//sz 5
+		String temporary = String.valueOf(cost);
+		BigDecimal bigDecimal = new BigDecimal(temporary);
+		String result = String.valueOf(bigDecimal);
+		orderString += result + ",";//sz 5
 		orderString += ",";//ccy 6
 		orderString += infoString + ",";//tag 6
 		orderString += ",";//posSide 7
@@ -365,6 +376,9 @@ public class Investment {
 									if ((Framework.getNowTimestamp() - new Long(ID) < 5000)) {
 										if ("0".equals(reply[3])) {
 											goon = true;
+											/*if ("tag".equals(reply[2])) {
+												System.out.println("strange!");
+											}*/
 											aInvestment.NAV = Double.valueOf(reply[2]);
 											newNAV = aInvestment.NAV;
 											investments.add(aInvestment);

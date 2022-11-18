@@ -58,20 +58,32 @@ if __name__ == '__main__':
                             returnordId = obj['data'][0]['ordId']
                             result = tradeAPI.get_orders(text[1], returnordId)#-USDT-201225
                             returnavgPx = result['data'][0]['avgPx']
-                            returnString = text[0] + "," + returnordId + "," + returnavgPx + "," + returncode + "," + returnmsg
+                            if '' == returnavgPx:
+                                print('strange!')
+                            returnString = text[0] + "," + returnordId + "," + returnavgPx + "," + returncode + "," + returnmsg + ":" + returnavgPx
                         else:
-                            returnString = text[0] + "," + 'orgId' + "," + "tag" + "," + returncode + "," + returnmsg
+                            returnordId = obj['data'][0]['ordId']
+                            result = tradeAPI.get_orders(text[1], returnordId)#-USDT-201225
+                            returnavgPx = result['data'][0]['avgPx']
+                            if '' == returnavgPx:
+                                print('strange!')
+                            returnString = text[0] + "," + returnordId + "," + returnavgPx + "," + returncode + "," + returnmsg + ":" + returnavgPx
+                        ifdeal = True
                     else:
+                        if returncode == '50013' or returncode == '50001':
+                            ifdeal = False
+                            time.sleep(0.5)
+                        else:
+                            ifdeal = True
                         returnString = text[0] + "," + 'orgId' + "," + "tag" + "," + returncode + "," + returnmsg
                     print(line + "\nfileNETdone!" + returnString)
-                    ifdeal = True
                 except:
                     print(line + "\nsomething wrong!")
                     ifdeal = False
             else:
                 nowtime = time.time() * 1000
                 if ts - nowtime > 100:
-                    pass
+                    ifdeal = False
                 else:
                     returnString = text[0] + "," + "ordId" + "," + "tag" + "," + "-4" + "," + "exceed5s"
                     print(line + "\nEXCEED!" + str(nowtime) + " " + returnString)
