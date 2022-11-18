@@ -39,25 +39,42 @@ if __name__ == '__main__':
         for line in list:
             text = line.split(",")
             ts = eval(text[0])
-            nowtime = time.time() * 1000 - 86400
+            nowtime = time.time() * 1000
             ifdeal = False
-            if nowtime - ts < 5000 & nowtime - ts > 0:
+            if nowtime - ts < 5000 and nowtime - ts > 0:
                 # 下单  Place Order
-                # result = tradeAPI.place_order(instId='BTC-USDT-210326', tdMode='cross', side='sell', posSide='short',
-                #                               ordType='market', sz='100',tgtCcy='',banAmend='')
-                # 获取订单信息  Get Order Details
-                # result = tradeAPI.get_orders('BTC', '257173039968825345')#-USDT-201225
-                time.sleep(0.1)
-                returnString = text[0] + "," + "ordId" + "," + "tag" + "," + "0" + "," + "success"
-                print(line + "\nfileNETdone!" + returnString)
-                ifdeal = True
+                try:
+                    result = tradeAPI.place_order(instId=text[1], tdMode=text[2], side=text[3], 
+                    # posSide='short',
+                                                ordType=text[4], sz=text[5])
+                    # tgtCcy='',banAmend='')
+                    # 获取订单信息  Get Order Details
+                    # time.sleep(0.1)
+                    obj = result
+                    returncode = obj['data'][0]['sCode']
+                    returnmsg = obj['data'][0]['sMsg']
+                    if returncode == '0':
+                        if text[3] == 'buy':
+                            returnordId = obj['data'][0]['ordId']
+                            result = tradeAPI.get_orders(text[1], returnordId)#-USDT-201225
+                            returnavgPx = result['data'][0]['avgPx']
+                            returnString = text[0] + "," + returnordId + "," + returnavgPx + "," + returncode + "," + returnmsg
+                        else:
+                            returnString = text[0] + "," + 'orgId' + "," + "tag" + "," + returncode + "," + returnmsg
+                    else:
+                        returnString = text[0] + "," + 'orgId' + "," + "tag" + "," + returncode + "," + returnmsg
+                    print(line + "\nfileNETdone!" + returnString)
+                    ifdeal = True
+                except:
+                    print(line + "\nsomething wrong!")
+                    ifdeal = False
             else:
-                nowtime = time.time() * 1000 - 86400
-                if ts - nowtime > 5000:
+                nowtime = time.time() * 1000
+                if ts - nowtime > 100:
                     pass
                 else:
                     returnString = text[0] + "," + "ordId" + "," + "tag" + "," + "-4" + "," + "exceed5s"
-                    print(line + "\nEXCEED!" + returnString)
+                    print(line + "\nEXCEED!" + str(nowtime) + " " + returnString)
                     ifdeal = True
             if ifdeal:
                 fi = open(xchangein + "/" + returnString, 'w')

@@ -461,7 +461,7 @@ public class Fund {
 				}				
 			}
 		}
-		System.out.println("updn: " + verify.cutDouble(Erate, 6) + "\t" + verify.cutDouble(result.val, 6));
+		System.out.println("updn: " + verify.cutDouble(result.r, 6) + "\t" + verify.cutDouble(result.val, 6));
 		if (paint > 0) {
 			verify.saveparam(Framework.getPath("coin", "paint", "weightup"), "");
 			verify.saveparam(Framework.getPath("coin", "paint", "weightdn"), "");
@@ -691,8 +691,7 @@ public class Fund {
 		if (Erate >= 0) {
 			Erate *= immediaterisk;
 			conclusion = reliability * Erate / (1 + fee);
-			System.out.println("  /|\\  ");
-			System.out.println("   |    " + verify.cutDouble(immediaterisk, 6) + "\t" + verify.cutDouble(Erate, 6));
+			System.out.println("  /|\\  " + verify.cutDouble(immediaterisk, 6) + "\t" + verify.cutDouble(Erate, 6));
 		} else {
 			Erate = result.val;
 			if (Erate > -1) {
@@ -704,19 +703,23 @@ public class Fund {
 			} else if (Erate <= -1) {
 				Erate = -1;
 			}
-			System.out.println("   |    ");
-			System.out.println("  \\|/   " + verify.cutDouble((-(immediaterisk - 2)), 6) + "\t" + verify.cutDouble(Erate, 6));
+			System.out.println("   |    " + verify.cutDouble((-(immediaterisk - 2)), 6) + "\t" + verify.cutDouble(Erate, 6));
 			conclusion = reliability * Erate / (1 + fee);
 		}
 		if (Erate > -1 && Erate < 0 ) {
-			Erate *= getdiscount(Erate, lastpointtoprate, pack.discountRate);
+			double rate = getdiscount(Erate, lastpointtoprate, pack.discountRate);
+			Erate *= rate;
 			if (Erate <= -1) {
 				Erate = -0.999;
 			}
+			System.out.println("  \\|/   " + verify.cutDouble(rate, 6) + "\t" + verify.cutDouble(Erate, 6));
 		} else if (Erate <= -1){
 			Erate = -1;
+			System.out.println("  \\|/   " + "super" + "\t" + verify.cutDouble(Erate, 6));
 		} else {
-			Erate *= getdiscount(Erate, lastpointtoprate, pack.discountRate);
+			double rate = getdiscount(Erate, lastpointtoprate, pack.discountRate);
+			Erate *= rate;
+			System.out.println("   |    " + verify.cutDouble(rate, 6) + "\t" + verify.cutDouble(Erate, 6));
 		}
 		if (paint > 0) {
 			String pythonconfig = Framework.getPath("coin", "paint", "pythonparam");

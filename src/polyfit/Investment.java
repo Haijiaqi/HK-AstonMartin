@@ -162,11 +162,11 @@ public class Investment {
 			double bar = param.optDouble("bar");
 			if (deltaCash / deltaCost > bar) {
 				Double stocktotalshare = Investment.gettotalshare(investments, 0);
-				double realshare = stocktotalshare * share;
+				double realshare = Math.round(stocktotalshare * share * 10000000) / 10000000;
 				Investment trade = new Investment();
 				trade.fund = aim;
 				trade.cost = -realshare;
-				trade.infoString = "";
+				trade.infoString = newNAV + "";
 				String actionPath = Framework.getPath("coin", "paint", aim + "_moneyRecord" + "-" + Framework.gettodaydate() + (Framework.ifback == 1 ? "-S" : "") + Framework.suffix);
 				String tradeString = trade.marketOrderItem();
 				if (Framework.ifback == 0) {
@@ -294,19 +294,19 @@ public class Investment {
 		} else {
 			side = "buy";
 		}
-		orderString += id + ",";//clOrdId
-		orderString += fund + ",";//instId
-		orderString += "cash,";//stdMode
-		orderString += side + ",";//side
-		orderString += "market,";//ordType
-		orderString += cost + ",";//sz
-		orderString += ",";//ccy
-		orderString += infoString + ",";//tag
-		orderString += ",";//posSide
-		orderString += ",";//px
-		orderString += ",";//reduceOnly
-		orderString += ",";//tgtCcy
-		orderString += "";//banAmend
+		orderString += id + ",";//clOrdId 0
+		orderString += fund + ",";//instId 1
+		orderString += "cash,";//stdMode 2
+		orderString += side + ",";//side 3
+		orderString += "market,";//ordType 4
+		orderString += cost + ",";//sz 5
+		orderString += ",";//ccy 6
+		orderString += infoString + ",";//tag 6
+		orderString += ",";//posSide 7
+		orderString += ",";//px 8
+		orderString += ",";//reduceOnly 8
+		orderString += ",";//tgtCcy 9
+		orderString += "";//banAmend 10
 		return orderString;
 	}
 
@@ -340,7 +340,7 @@ public class Investment {
 					Investment trade = new Investment();
 					trade.fund = aim;
 					trade.cost = cost;
-					trade.infoString = "";
+					trade.infoString = newNAV + "";
 					String actionPath = Framework.getPath("coin", "paint", aim + "_moneyRecord" + "-" + Framework.gettodaydate() + (Framework.ifback == 1 ? "-S" : "") + Framework.suffix);
 					String tradeString = trade.marketOrderItem();
 					String id = tradeString.split(",")[0];
@@ -365,6 +365,8 @@ public class Investment {
 									if ((Framework.getNowTimestamp() - new Long(ID) < 5000)) {
 										if ("0".equals(reply[3])) {
 											goon = true;
+											aInvestment.NAV = Double.valueOf(reply[2]);
+											newNAV = aInvestment.NAV;
 											investments.add(aInvestment);
 										}
 										tradeString += "," + reply[3] + "," + reply[4];
@@ -433,8 +435,13 @@ public class Investment {
 					} else {
 						if (cycTimes == 10) {
 							tradeString += ",-2" + "," + "timeout";
-						} else if (!out) {
-							tradeString += ",-10" + "," + "unknow";
+						} else {
+							if (cycTimes < 10) {
+								tradeString += ",-9" + "," + "success but takeout";
+							}
+							if (!out) {
+								tradeString += ",-10" + "," + "unknow";
+							}
 						}
 					}
 					verify.appenddata(actionPath, tradeString + "\n");

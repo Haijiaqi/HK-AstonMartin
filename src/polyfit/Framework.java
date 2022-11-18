@@ -65,7 +65,7 @@ public class Framework {
 	
 	public static ArrayList<Investment> tradeList = new ArrayList<Investment>();
 	
-	public static String certifysuffix (String rawPath) {
+	public static String certifysuffix (String rawPath, boolean notmore) {
 		String[] s = rawPath.split("/");
 		String dirPath = "";
 		for (int i = 1; i < s.length - 1; i++) {
@@ -81,10 +81,12 @@ public class Framework {
 		String patternName = "";
 		String result = "ok";
 		String ends = "";
+		String preends = "";
 		int findj = -1;
 		int findi = 0;
 		for (int i = 0; i < 50; i++) {
 			findj = -1;
+			preends = ends;
 			ends = (i == 0 ? "" : "-" + i);
 			patternName = "";
 			patternName += dryname + (i == 0 ? "" : "-" + i);
@@ -101,7 +103,11 @@ public class Framework {
 				break;
 			}
 		}
-		result = ends;
+		if (notmore) {
+			result = preends;
+		} else {
+			result = ends;
+		}
 		return result;
 	}
 	public static boolean initCoin(String todaystamp) {
@@ -112,7 +118,9 @@ public class Framework {
 		JSONArray coins = verify.loadArray(listPath);
 		int st = params.optInt("st");
 		refreshtodaydate();
-		suffix = certifysuffix(Framework.getPath("coin", "paint", "history" + "-" + gettodaydate() + (ifback == 1 ? "-S" : "")));
+		if (!"start".equals(todaystamp)) {
+			suffix = certifysuffix(Framework.getPath("coin", "paint", "history" + "-" + gettodaydate() + (ifback == 1 ? "-S" : "")), false);
+		}
 		if ("start".equals(todaystamp)) {
 			Scanner in = new Scanner(System.in);
 			System.out.println("restore data?[yes]");
@@ -135,9 +143,14 @@ public class Framework {
 					record.put("balance", 0);
 					record.put("cash", 0);
 					coins.put(i, record);
+					System.out.println("restore config data " + aim);
 				}
 				verify.saveparam(listPath, coins.toString());
 				verify.saveparam(configPath, params.toString());
+				suffix = certifysuffix(Framework.getPath("coin", "paint", "history" + "-" + gettodaydate() + (ifback == 1 ? "-S" : "")), false);
+			} else {
+				suffix = certifysuffix(Framework.getPath("coin", "paint", "history" + "-" + gettodaydate() + (ifback == 1 ? "-S" : "")), true);
+
 			}
 		}
 		for (int i = 0; "start".equals(todaystamp) && i < coins.length(); i++) {
