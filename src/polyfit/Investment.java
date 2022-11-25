@@ -23,6 +23,7 @@ public class Investment {
 	double NAV = 0;
 	double inrates = 0;
 	double stockshare = 0;
+	double thiscount = 0;
 	double share = 0;
 	double balance = 0;
 	double cash = 0;
@@ -86,7 +87,8 @@ public class Investment {
 		if (sellShare < 0) {
 			sellShare = 0;
 		}
-		return sellShare;
+		thiscount = sellShare;
+		return thiscount; // sellshare - realsellshare;
 	}
 
 	public double getbalancebyrate(double rate) {
@@ -105,7 +107,7 @@ public class Investment {
 	}
 
 	public static void trade(Investment trade, String info1, String info2, int type, boolean online) {
-		double number = Double.valueOf(trade.cost);
+		double number = Math.round(Double.valueOf(trade.cost) * 10) / 10.0;
 		if (number >= 0) {
 			info2 = info2.substring(0, info2.indexOf("%"));
 			buy(trade.fund + "," + trade.id, number, Double.valueOf(info1),
@@ -118,7 +120,7 @@ public class Investment {
 	public String print() {
 		String result = "";
 		result += id + "," + timestamp + "," + fund + "," + cost + "," + NAV
-				+ "," + inrates + "," + stockshare + "," + (share < 0.00000001 ? 0 : share) + "," + balance + "," + cash;
+				+ "," + inrates + "," + stockshare + "," + (share < 0.000000000001 ? 0 : share) + "," + balance + "," + cash;
 		return result;
 	}
 
@@ -161,9 +163,9 @@ public class Investment {
 			JSONArray coins = verify.loadArray(path);
 			//param.put("coins", list);
 			double bar = param.optDouble("bar");
-			if (deltaCash / deltaCost > bar) {
-				Double stocktotalshare = Investment.gettotalshare(investments, 0);
-				double realshare = stocktotalshare * share; // Math.round(stocktotalshare * share * 10000000) / 10000000.0;
+			Double stocktotalshare = Investment.gettotalshare(investments, -1);
+			double realshare = stocktotalshare * share; // Math.round(stocktotalshare * share * 10000000) / 10000000.0;
+			if (deltaCash / deltaCost > bar && realshare > 0.00001) {
 				Investment trade = new Investment();
 				trade.fund = aim;
 				trade.cost = -realshare;
@@ -192,7 +194,7 @@ public class Investment {
 								if ((Framework.getNowTimestamp() - new Long(ID) < 5000)) {
 									if ("0".equals(reply[3])) {
 										goon = true;
-										newNAV = Double.valueOf(reply[2]);
+										newNAV = Double.valueOf(reply[2]);											
 									}									
 									tradeString += "," + reply[3] + "," + reply[4];
 								} else {
@@ -247,6 +249,9 @@ public class Investment {
 								double realDeltaCash = newNAV * realshare * handrate;
 								money += realDeltaCash;
 								double diff = realDeltaCash - deltaCash;
+								if (diff > 5) {
+									System.out.println("strange!");
+								}
 								investments.get(0).cash += diff;
 								record.put("cost", money);
 								record.put("NAV", newNAV);
@@ -338,8 +343,11 @@ public class Investment {
 				}
 			}
 			if (!alreadyhas) {
-				Investment aInvestment = new Investment(info.length > 1 ? info[1] : "0",
-				(type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp()), aim + " " + remark, cost, newNAV, inrates);
+				Investment aInvestment = null;
+				if (Framework.ifback == 1) {
+					aInvestment = new Investment(info.length > 1 ? info[1] : "0",
+					(type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp()), aim + " " + remark, cost, newNAV, inrates);
+				}
 				String path = Framework.getPath("coin", "paint", "processInfo");
 				JSONObject param = verify.loadObject(path);
 				JSONArray coinsInfo = param.getJSONArray("coins");
@@ -374,18 +382,21 @@ public class Investment {
 								String ID = reply[0];
 								if (id.equals(ID)) {
 									if ((Framework.getNowTimestamp() - new Long(ID) < 5000)) {
-										if ("0".equals(reply[3])) {
+										if ("0".equals(reply[4])) {
 											goon = true;
-											/*if ("tag".equals(reply[2])) {
+											if ("".equals(reply[2])) {
 												System.out.println("strange!");
-											}*/
-											aInvestment.NAV = Double.valueOf(reply[2]);
-											newNAV = aInvestment.NAV;
+											}
+											newNAV = Double.valueOf(reply[2]);
+											double shareFill = Double.valueOf(reply[3]);
+											aInvestment = new Investment(info.length > 1 ? info[1] : "0",
+											(type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp()), aim + " " + remark, cost, newNAV, inrates);
+											aInvestment.share = shareFill;
 											investments.add(aInvestment);
 										}
-										tradeString += "," + reply[3] + "," + reply[4];
+										tradeString += "," + reply[4] + "," + reply[5];
 									} else {
-										tradeString += "," + reply[3] + "," + reply[4] + " butexceed5s";
+										tradeString += "," + reply[4] + "," + reply[5] + " butexceed5s";
 									}
 									Thread.sleep(200);
 									files[j].delete();
@@ -408,7 +419,7 @@ public class Investment {
 						}
 					}
 					if (goon || Framework.ifback == 1) {
-						if (Framework.ifback == 1) {
+						if (Framework.ifback == 1 && aInvestment != null) {
 							investments.add(aInvestment);
 						}
 						double marketprice = gettotalmarketprice(investments, newNAV);
@@ -481,7 +492,7 @@ public class Investment {
 		this.cost += cost;
 		this.NAV = newNAV;
 		this.inrates = rates;
-		this.share = this.cost / (1 + this.inrates) / this.NAV;
+		this.share = Math.round(this.cost / (1 + this.inrates) / this.NAV * 100000000) / 100000000.0;
 		this.balance = this.share * this.NAV;
 		return share;
 	}
@@ -563,8 +574,10 @@ public class Investment {
 		for (int i = 0; i < investments.size(); i++) {
 			if (type == 0) {
 				result += investments.get(i).stockshare;
-			} else {
+			} else if (type == 1){
 				result += investments.get(i).share;
+			} else {
+				result += investments.get(i).thiscount;
 			}
 		}
 		return result;
@@ -607,6 +620,8 @@ public class Investment {
 	}
 
 	public static void rewrites(String code, ArrayList<Investment> investments, boolean fold) {
+		double test = gettotalshare(investments, 1);
+		System.out.println("totalshare: " + test);
 		try {
 			if (investments.size() > 0) {
 				String path = Framework.getPath("balance", "balance", code);// balanceDir
@@ -624,6 +639,7 @@ public class Investment {
 				if (fold) {
 					assemble = new Investment();
 				}
+				int num = 0;
 				for (int i = 0; i < investments.size(); i++) {
 					if (fold) {
 						if (investments.get(i).balance == 0) {
@@ -639,14 +655,28 @@ public class Investment {
 							assemble.share = investments.get(i).share;
 							assemble.balance = investments.get(i).balance;
 							assemble.cash += investments.get(i).cash;
+							num++;
 						} else {
+							if (i != 0) {
+								bw.write(assemble.print() + "\n");	
 							bw.write(assemble.print() + "\n");
+								bw.write(assemble.print() + "\n");	
+							bw.write(assemble.print() + "\n");
+								bw.write(assemble.print() + "\n");	
+							bw.write(assemble.print() + "\n");
+								bw.write(assemble.print() + "\n");	
+							bw.write(assemble.print() + "\n");
+								bw.write(assemble.print() + "\n");	
+							}
 							bw.write(investments.get(i).print() + "\n");
 							fold = false;
 						}
 					} else {
 						bw.write(investments.get(i).print() + "\n");
 					}
+				}
+				if (num == investments.size()) {
+					bw.write(assemble.print() + "\n");	
 				}
 				bw.close();
 				Thread.sleep(5);

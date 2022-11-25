@@ -20,15 +20,24 @@ import okx.TradingBot_api as TradingBot
 import okx.Finance_api as Finance
 
 if __name__ == '__main__':
-    api_key = "9df9b09b-3ca0-4184-9f33-970cabdffa9e"
-    secret_key = "1EF3E974E3F46008BF80AC22129322CA"
-    passphrase = "OKEx@155818"
+
     # flag是实盘与模拟盘的切换参数 flag is the key parameter which can help you to change between demo and real trading.
-    flag = '1'  # 模拟盘 demo trading
-    # flag = '0'  # 实盘 real trading
+    # flag = '1'  # 模拟盘 demo trading
+    flag = '0'  # 实盘 real trading
+    if flag == '1':
+        api_key = "9df9b09b-3ca0-4184-9f33-970cabdffa9e"
+        secret_key = "1EF3E974E3F46008BF80AC22129322CA"
+        passphrase = "OKEx@155818"
+    else:
+        api_key = "8275ee39-2fa6-4955-9e84-427c1a8255c4"
+        secret_key = "AEBDFF716197858C61C9FBE4E2AF9C37"
+        passphrase = "OKEx@155818"
 
     # trade api
     tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
+    
+    result = tradeAPI.get_order_list()
+    print(result)
     basepath = os.getcwd() + '/work/coin/'
     xchangeout = basepath + "xchangeout"
     xchangein = basepath + "xchangein"
@@ -56,18 +65,42 @@ if __name__ == '__main__':
                     if returncode == '0':
                         if text[3] == 'buy':
                             returnordId = obj['data'][0]['ordId']
-                            result = tradeAPI.get_orders(text[1], returnordId)#-USDT-201225
-                            returnavgPx = result['data'][0]['avgPx']
+                            returnavgPx = ''
+                            j = 0
+                            for item in range(3):
+                                time.sleep(0.1)
+                                result = tradeAPI.get_orders(text[1], returnordId)#-USDT-201225
+                                print(result)
+                                returnavgPx = result['data'][0]['avgPx']
+                                returnavgaccFillSz = result['data'][0]['accFillSz']
+                                returnavgfee = result['data'][0]['fee']
+                                if '' == returnavgPx:
+                                    j = j+1
+                                    continue
+                                else:
+                                    break
                             if '' == returnavgPx:
-                                print('strange!')
-                            returnString = text[0] + "," + returnordId + "," + returnavgPx + "," + returncode + "," + returnmsg + ":" + returnavgPx
+                                returnString = text[0] + "," + "ordId" + "," + "tag" + "," + "," + "-4" + "," + "exceed300ms"
+                            else:
+                                returnString = text[0] + "," + returnordId + "," + returnavgPx + "," + returnavgaccFillSz + "," + returncode + "," + returnmsg + ":" + returnavgPx
                         else:
                             returnordId = obj['data'][0]['ordId']
-                            result = tradeAPI.get_orders(text[1], returnordId)#-USDT-201225
-                            returnavgPx = result['data'][0]['avgPx']
+                            returnavgPx = ''
+                            j = 0
+                            for item in range(3):
+                                time.sleep(0.1)
+                                result = tradeAPI.get_orders(text[1], returnordId)#-USDT-201225
+                                print(result)
+                                returnavgPx = result['data'][0]['avgPx']
+                                if '' == returnavgPx:
+                                    j = j+1
+                                    continue
+                                else:
+                                    break
                             if '' == returnavgPx:
-                                print('strange!')
-                            returnString = text[0] + "," + returnordId + "," + returnavgPx + "," + returncode + "," + returnmsg + ":" + returnavgPx
+                                returnString = text[0] + "," + "ordId" + "," + "tag" + "," + "-4" + "," + "exceed300ms"
+                            else:
+                                returnString = text[0] + "," + returnordId + "," + returnavgPx + "," + returncode + "," + returnmsg + ":" + returnavgPx
                         ifdeal = True
                     else:
                         if returncode == '50013' or returncode == '50001':
@@ -75,7 +108,7 @@ if __name__ == '__main__':
                             time.sleep(0.5)
                         else:
                             ifdeal = True
-                        returnString = text[0] + "," + 'orgId' + "," + "tag" + "," + returncode + "," + returnmsg
+                        returnString = text[0] + "," + 'orgId' + "," + "tag" + "," + "," + returncode + "," + returnmsg
                     print(line + "\nfileNETdone!" + returnString)
                 except:
                     print(line + "\nsomething wrong!")
@@ -85,7 +118,7 @@ if __name__ == '__main__':
                 if ts - nowtime > 100:
                     ifdeal = False
                 else:
-                    returnString = text[0] + "," + "ordId" + "," + "tag" + "," + "-4" + "," + "exceed5s"
+                    returnString = text[0] + "," + "ordId" + "," + "tag" + "," + "," + "-4" + "," + "exceed5s"
                     print(line + "\nEXCEED!" + str(nowtime) + " " + returnString)
                     ifdeal = True
             if ifdeal:

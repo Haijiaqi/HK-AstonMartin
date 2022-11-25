@@ -495,7 +495,7 @@ public class Framework {
 			if (!"".equals(infomation)) {
 				String newNAVstring = Framework.getInfoFromJson(infomation, "newNAV", ":");
 				String trade = Framework.produceTradeItem(infomation);
-				executeOnline(trade, newNAVstring);				
+				executeOnline(trade, newNAVstring, 0);				
 			}
 		}
 	}
@@ -850,8 +850,17 @@ public class Framework {
 		return aInvestment.printtodolist(Framework.getNowTimestamp() + "");
 	}
 
-	public static void executeOnline(String line, String price) {
+	public static void executeOnline(String line, String price, int onlybuyorsell) {
 		Investment item = new Investment(line);
+		if (onlybuyorsell == 1) {
+			if (item.cost < 0) {
+				item.cost = 0;
+			}
+		} else if (onlybuyorsell == -1) {
+			if (item.cost > 0) {
+				item.cost = 0;
+			}
+		}
 		Investment.trade(item, price, "0.1%", 0, true);
 	}
 
