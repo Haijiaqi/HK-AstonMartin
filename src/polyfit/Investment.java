@@ -388,7 +388,8 @@ public class Investment {
 												System.out.println("strange!");
 											}
 											newNAV = Double.valueOf(reply[2]);
-											double shareFill = Double.valueOf(reply[3]);
+											double handrate = (1 - inrates);
+											double shareFill = Double.valueOf(reply[3]) * handrate;
 											aInvestment = new Investment(info.length > 1 ? info[1] : "0",
 											(type == 1 ? Framework.getTodayTimestamp() : Framework.getNowTimestamp()), aim + " " + remark, cost, newNAV, inrates);
 											aInvestment.share = shareFill;
