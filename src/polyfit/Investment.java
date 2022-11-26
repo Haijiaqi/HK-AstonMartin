@@ -164,7 +164,7 @@ public class Investment {
 			//param.put("coins", list);
 			double bar = param.optDouble("bar");
 			Double stocktotalshare = Investment.gettotalshare(investments, -1);
-			double realshare = stocktotalshare * share; // Math.round(stocktotalshare * share * 10000000) / 10000000.0;
+			double realshare = stocktotalshare; // * share; // Math.round(stocktotalshare * share * 10000000) / 10000000.0;
 			if (deltaCash / deltaCost > bar && realshare > 0.00001) {
 				Investment trade = new Investment();
 				trade.fund = aim;
@@ -658,15 +658,7 @@ public class Investment {
 							num++;
 						} else {
 							if (i != 0) {
-								bw.write(assemble.print() + "\n");	
-							bw.write(assemble.print() + "\n");
-								bw.write(assemble.print() + "\n");	
-							bw.write(assemble.print() + "\n");
-								bw.write(assemble.print() + "\n");	
-							bw.write(assemble.print() + "\n");
-								bw.write(assemble.print() + "\n");	
-							bw.write(assemble.print() + "\n");
-								bw.write(assemble.print() + "\n");	
+								bw.write(assemble.print() + "\n");
 							}
 							bw.write(investments.get(i).print() + "\n");
 							fold = false;
