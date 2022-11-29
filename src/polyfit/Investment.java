@@ -560,6 +560,13 @@ public class Investment {
 		}
 		return result;
 	}
+	public static double gettotalcostnow(ArrayList<Investment> investments) {
+		double result = 0;
+		for (int i = 0; i < investments.size(); i++) {
+			result += investments.get(i).cost;
+		}
+		return result;
+	}
 	public static double gettotalmarketprice(ArrayList<Investment> investments, double newNAV) {
 		double result = 0;
 		for (int i = 0; i < investments.size(); i++) {

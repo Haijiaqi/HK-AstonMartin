@@ -38,7 +38,7 @@ public class Framework {
 
 	public static String newdate = "2020-08-19";
 
-	public static String basepath = new File("").getAbsolutePath(); // "C:/b"; // 
+	public static String basepath = new File("").getAbsolutePath(); // "C:/b"; //
 
 	public static String workpath = basepath + "/work/date/record/list.txt";
 
@@ -57,15 +57,14 @@ public class Framework {
 	public static String stPtr = "";
 	public static int ndPtr = 0;
 	public static Long systime = new Long(0);
-	
-	
+
 	public static String logpath = "";
-	
+
 	// public static Logger log = Logger.getLogger("WORK");
-	
+
 	public static ArrayList<Investment> tradeList = new ArrayList<Investment>();
-	
-	public static String certifysuffix (String rawPath, boolean notmore) {
+
+	public static String certifysuffix(String rawPath, boolean notmore) {
 		String[] s = rawPath.split("/");
 		String dirPath = "";
 		for (int i = 1; i < s.length - 1; i++) {
@@ -110,6 +109,7 @@ public class Framework {
 		}
 		return result;
 	}
+
 	public static boolean initCoin(String todaystamp) {
 		String configPath = Framework.getPath("coin", "paint", "processInfo");
 		JSONObject params = verify.loadObject(configPath);
@@ -119,7 +119,9 @@ public class Framework {
 		int st = params.optInt("st");
 		refreshtodaydate();
 		if (!"start".equals(todaystamp)) {
-			suffix = certifysuffix(Framework.getPath("coin", "paint", "history" + "-" + gettodaydate() + (ifback == 1 ? "-S" : "")), false);
+			suffix = certifysuffix(
+					Framework.getPath("coin", "paint", "history" + "-" + gettodaydate() + (ifback == 1 ? "-S" : "")),
+					false);
 		}
 		if ("start".equals(todaystamp)) {
 			Scanner in = new Scanner(System.in);
@@ -137,9 +139,10 @@ public class Framework {
 							break;
 						}
 					}
+					ArrayList<Investment> investments = Investment.loads(aim);
+					double cst = Investment.gettotalcostnow(investments);
+					double csh = Investment.gettotalcash(investments);
 					recordInfo.put("struct", 0);
-					double cst = 1666;
-					double csh = 1692.97;
 					record.put("amount", 40 + (csh - cst) / 40);
 					record.put("cost", cst);
 					record.put("balance", 0);
@@ -149,22 +152,26 @@ public class Framework {
 				}
 				verify.saveparam(listPath, coins.toString());
 				verify.saveparam(configPath, params.toString());
-				suffix = certifysuffix(Framework.getPath("coin", "paint", "history" + "-" + gettodaydate() + (ifback == 1 ? "-S" : "")), false);
+				suffix = certifysuffix(Framework.getPath("coin", "paint",
+						"history" + "-" + gettodaydate() + (ifback == 1 ? "-S" : "")), false);
 			} else {
-				suffix = certifysuffix(Framework.getPath("coin", "paint", "history" + "-" + gettodaydate() + (ifback == 1 ? "-S" : "")), true);
+				suffix = certifysuffix(Framework.getPath("coin", "paint",
+						"history" + "-" + gettodaydate() + (ifback == 1 ? "-S" : "")), true);
 
 			}
 		}
 		for (int i = 0; "start".equals(todaystamp) && i < coins.length(); i++) {
-			JSONObject item = (JSONObject)coins.get(i);
+			JSONObject item = (JSONObject) coins.get(i);
 			String type = item.getString("type");
 			String path = Framework.getPath("seconds", "fund", type);
 			ArrayList<String> lines = new ArrayList<>();
 			lines = verify.loadlines(path, 119, 120);
-		//in.close();
+			// in.close();
 			if (lines.size() == 0
-			 || (Double.valueOf(Framework.getNowTimestamp()) - Double.valueOf(lines.get(lines.size() - 1).split(",")[0]) > (st + 1) * 1000)
-			 || (Double.valueOf(Framework.getNowTimestamp()) - Double.valueOf(lines.get(lines.size() - 1).split(",")[0]) < 0)) {
+					|| (Double.valueOf(Framework.getNowTimestamp())
+							- Double.valueOf(lines.get(lines.size() - 1).split(",")[0]) > (st + 1) * 1000)
+					|| (Double.valueOf(Framework.getNowTimestamp())
+							- Double.valueOf(lines.get(lines.size() - 1).split(",")[0]) < 0)) {
 				if (ifback == 0) {
 					System.out.println("restore seconds data " + type);
 					String path1 = "";
@@ -174,13 +181,13 @@ public class Framework {
 					verify.copylines(path1, path2);
 					path1 = Framework.getPath("seconds", "fund", type + "_keep");
 					path2 = Framework.getPath("seconds", "fund", type + "_data");
-					//verify.copylines(path1, path2);
+					// verify.copylines(path1, path2);
 					path1 = Framework.getPath("minutes", "fund", type + "_keep");
 					path2 = Framework.getPath("minutes", "fund", type + "");
 					verify.copylines(path1, path2);
 					path1 = Framework.getPath("minutes", "fund", type + "_keep");
 					path2 = Framework.getPath("minutes", "fund", type + "_data");
-					//verify.copylines(path1, path2);
+					// verify.copylines(path1, path2);
 				} else {
 					String path2 = "";
 					path2 = Framework.getPath("seconds", "fund", type + "");
@@ -190,28 +197,33 @@ public class Framework {
 					path2 = Framework.getPath("balance", "balance", type);
 					verify.saveparam(path2, "");
 				}
-			}/* else {
-				String path1 = "";
-				String path2 = "";
-				path1 = Framework.getPath("seconds", "fund", type + "_data");
-				path2 = Framework.getPath("seconds", "fund", type + "");
-				verify.copylines(path1, path2, 0, 120);
-				path1 = Framework.getPath("minutes", "fund", type + "_data");
-				path2 = Framework.getPath("minutes", "fund", type + "");
-				verify.copylines(path1, path2, 0, 120);
-			}*/
+			} /*
+				 * else {
+				 * String path1 = "";
+				 * String path2 = "";
+				 * path1 = Framework.getPath("seconds", "fund", type + "_data");
+				 * path2 = Framework.getPath("seconds", "fund", type + "");
+				 * verify.copylines(path1, path2, 0, 120);
+				 * path1 = Framework.getPath("minutes", "fund", type + "_data");
+				 * path2 = Framework.getPath("minutes", "fund", type + "");
+				 * verify.copylines(path1, path2, 0, 120);
+				 * }
+				 */
 		}
 		return true;
 	}
+
 	public static boolean intime(Long time, int inter) {
 		Long delta = Math.abs(time - systime);
 		return delta < inter;
 	}
+
 	public static boolean intime(String time, int inter) {
 		Long timeLong = new Long(time);
 		Long delta = Math.abs(timeLong - systime);
 		return delta < inter;
 	}
+
 	public static boolean init(String todaystamp) {
 		File fund = new File(fundDir);
 		if (!fund.exists()) {
@@ -255,6 +267,7 @@ public class Framework {
 				&& new File(fundDir + "/" + gettodate()).listFiles().length > 3000;
 		return startornot;
 	}
+
 	public static boolean immediateGo() {
 		String url = "http://fundgz.1234567.com.cn/js/" + "000001" + ".js?";
 		Framework.waiting(1, "000001" + " is getting from internet!");
@@ -300,7 +313,7 @@ public class Framework {
 					continue;
 				}
 				if (paint > 0) {
-					verify.saveparam(basepath + "/pythonparam.txt", thispath + ";");					
+					verify.saveparam(basepath + "/pythonparam.txt", thispath + ";");
 				}
 				// 计策修改时关注这里以下，确保能够被分配到对应的风险级中
 				// 原始数据给予解析
@@ -323,7 +336,7 @@ public class Framework {
 			log(baos.toString());
 		}
 	}
-	
+
 	// 中间步骤，梳理保存信息
 	public static void middleStep(/* String indexDir, String tradeListPath */) {
 		ArrayList<Investment> data = new ArrayList<Investment>();
@@ -364,7 +377,7 @@ public class Framework {
 						Fund aFund = new Fund(iline, paint);
 						// 无增减就不处理
 						// if (aFund.Erate == 1) {
-						// 	continue;
+						// continue;
 						// }
 						if (aFund.totalshare > 0 && aFund.Erate < 1) {
 							// 持有份额且有减倾向的进入持仓待减表
@@ -403,11 +416,11 @@ public class Framework {
 			log(baos.toString());
 		}
 	}
-	
+
 	public static void stockMarket() {
 		String thispath = getPath("today", "fund", "000000");
 		ArrayList<pack> outpoints = verify.loadpoints(thispath, 0, 1000, -1);
-		String[] rawinfo = {"000000", "上证指数", "0", "0", "0"};
+		String[] rawinfo = { "000000", "上证指数", "0", "0", "0" };
 		Fund aFund = new Fund(rawinfo, outpoints, 1, 0);
 		double coefficient = aFund.Erate > 1 ? aFund.Erate : 1;
 		Investment.amount = (coefficient - 1) * 20000;
@@ -419,7 +432,7 @@ public class Framework {
 			JSONObject obj = coins.getJSONObject(j);
 			String[] info = { obj.getString("type"), obj.getString("name") };
 			ArrayList<pack> points = null;
-			points = verify.getData(seconds < 60, info[0], seconds, 120, -1, "hours");	
+			points = verify.getData(seconds < 60, info[0], seconds, 120, -1, "hours");
 			if (points == null) {
 				System.out.println(info[0] + " loading from net!");
 				continue;
@@ -440,7 +453,7 @@ public class Framework {
 			double Erate = 0;
 			int paint = recordInfo.optInt("paint");
 			Fund aFund = new Fund(info, points, paint);
-			//aFund.polynomial_all.process(points, aFund.risklevel, 1, 0);
+			// aFund.polynomial_all.process(points, aFund.risklevel, 1, 0);
 			double toprate = aFund.lastpointtoprate;// polynomial_all.evaltoprate(points.get(points.size() - 1).getY());
 			Erate = aFund.getdiscount(1, toprate, pack.discountRate);
 			int rd = param.optInt("rd");
@@ -449,11 +462,13 @@ public class Framework {
 			double topratecut = verify.cutDouble(toprate, 6);
 			if (toprate > 0.99) {
 				Erate = 2 + 12 / (rd / nd);
-				System.out.println("                               TOP!!!: " + topratecut + "\tErate: " + verify.cutDouble(Erate, 6));
+				System.out.println("                               TOP!!!: " + topratecut + "\tErate: "
+						+ verify.cutDouble(Erate, 6));
 			} else {
 				if (outrate > 2) {
 					Erate = outrate - 1;
-					System.out.println("                               NO BUYING!!!: " + topratecut + "\tTIMES: " + (verify.cutDouble(Erate, 6) - 2));
+					System.out.println("                               NO BUYING!!!: " + topratecut + "\tTIMES: "
+							+ (verify.cutDouble(Erate, 6) - 2));
 				} else {
 					System.out.println("toprate: " + topratecut + "\tErate: " + verify.cutDouble(Erate, 6));
 				}
@@ -466,17 +481,20 @@ public class Framework {
 			verify.saveparam(path, param.toString());
 		}
 	}
+
 	public static void runseconds(JSONArray coins, JSONObject param, int seconds) {
 		for (int j = 0; j < coins.length(); j++) {
 			JSONObject obj = coins.getJSONObject(j);
-			/*ArrayList<pack> structs = Fund.parsePoints(obj.getString("struct"));
-			Polynomial p = new Polynomial();
-			p.processLS(structs, 2);
-			Polynomial start = new Polynomial(2);
-			start.assemble(p, 1);
-			Polynomial zero = new Polynomial(structs.get(structs.size() - 1).x, 0);
-			start.assemble(zero, 1);*/
-			//start.display(1000);
+			/*
+			 * ArrayList<pack> structs = Fund.parsePoints(obj.getString("struct"));
+			 * Polynomial p = new Polynomial();
+			 * p.processLS(structs, 2);
+			 * Polynomial start = new Polynomial(2);
+			 * start.assemble(p, 1);
+			 * Polynomial zero = new Polynomial(structs.get(structs.size() - 1).x, 0);
+			 * start.assemble(zero, 1);
+			 */
+			// start.display(1000);
 			String[] info = { obj.getString("type"), obj.getString("name") };
 			JSONObject recordInfo = null;
 			JSONArray coinsInfo = param.getJSONArray("coins");
@@ -493,21 +511,23 @@ public class Framework {
 			int extrapolation = recordInfo.optInt("extrapolation");
 			double amount = obj.optDouble("amount");
 			int paint = obj.optInt("paint");
-			String infomation = processAfund(info, seconds, 120, order, extrapolation, outrate, 0, amount > start ? amount : start, "", paint);
+			String infomation = processAfund(info, seconds, 120, order, extrapolation, outrate, 0,
+					amount > start ? amount : start, "", paint);
 			if (!"".equals(infomation)) {
 				String newNAVstring = Framework.getInfoFromJson(infomation, "newNAV", ":");
 				String trade = Framework.produceTradeItem(infomation);
-				executeOnline(trade, newNAVstring, 0);				
+				executeOnline(trade, newNAVstring, 0);
 			}
 		}
 	}
+
 	public static void runminutes(JSONArray coins, JSONObject param, int seconds) {
 		boolean ifsave = false;
 		for (int j = 0; j < coins.length(); j++) {
 			JSONObject obj = coins.getJSONObject(j);
 			String[] info = { obj.getString("type"), obj.getString("name") };
 			ArrayList<pack> points = null;
-			points = verify.getData(seconds < 60, info[0], seconds, 120, -1, "minutes");	
+			points = verify.getData(seconds < 60, info[0], seconds, 120, -1, "minutes");
 			if (points == null) {
 				System.out.println(info[0] + " loading from net!");
 				continue;
@@ -528,7 +548,7 @@ public class Framework {
 			double Erate = 0;
 			int paint = recordInfo.optInt("paint");
 			Fund aFund = new Fund(info, points, paint);
-			//aFund.polynomial_all.process(points, aFund.risklevel, 1, 0);
+			// aFund.polynomial_all.process(points, aFund.risklevel, 1, 0);
 			double toprate = aFund.lastpointtoprate;// polynomial_all.evaltoprate(points.get(points.size() - 1).getY());
 			Erate = aFund.getdiscount(1, toprate, pack.discountRate);
 			int rd = param.optInt("rd");
@@ -539,13 +559,15 @@ public class Framework {
 				if (toprate > 0.99) {
 					Erate = 2 + 8;// / (nd / st);
 				} else if (toprate < 0.01) {
-					//Erate = 2 + 1;// / (nd / st);}
+					// Erate = 2 + 1;// / (nd / st);}
 				}
-				System.out.println("                               TOP!!!: " + topratecut + "\tErate: " + verify.cutDouble(Erate, 6));
+				System.out.println("                               TOP!!!: " + topratecut + "\tErate: "
+						+ verify.cutDouble(Erate, 6));
 			} else {
 				if (outrate > 2) {
 					Erate = outrate - 1;
-					System.out.println("                               NO BUYING!!!: " + topratecut + "\tTIMES: " + (Erate - 2));
+					System.out.println(
+							"                               NO BUYING!!!: " + topratecut + "\tTIMES: " + (Erate - 2));
 				} else {
 					System.out.println("toprate: " + topratecut + "\tErate: " + verify.cutDouble(Erate, 6));
 				}
@@ -558,19 +580,23 @@ public class Framework {
 			verify.saveparam(path, param.toString());
 		}
 	}
-	public static String processAfund(String[] type, int seconds, int num, double order, int extrapolation, double f, int gate, double amount, String outpath, int paint) {
+
+	public static String processAfund(String[] type, int seconds, int num, double order, int extrapolation, double f,
+			int gate, double amount, String outpath, int paint) {
 		ArrayList<pack> points = null;
-		points = verify.getData(seconds < 60, type[0], seconds, num, -1, seconds <= 60 ? "seconds" : "minutes");	
+		points = verify.getData(seconds < 60, type[0], seconds, num, -1, seconds <= 60 ? "seconds" : "minutes");
 		if (points == null) {
 			return "";
 		}
-		//points = verify.loadpoints(Framework.getPath("coin", "paint", "rawdata"), 0, 150, -1);	.f(points.get(points.size() - 1).val, 0)
+		// points = verify.loadpoints(Framework.getPath("coin", "paint", "rawdata"), 0,
+		// 150, -1); .f(points.get(points.size() - 1).val, 0)
 		Fund afund = new Fund(type, points, order, paint, extrapolation, f, amount, gate);
 		if (!"".equals(outpath)) {
 			verify.saveparam(outpath, afund.outString + "\n");
 		}
 		return afund.outString;
 	}
+
 	// 产出指标数
 	public static void produceFundIndex(/*
 										 * String listPath, String fundDir, //
@@ -717,8 +743,8 @@ public class Framework {
 			if (data.size() > 0) {
 				// 找到占比最大的
 				// if (maxValue < data.get(0).inrates) {
-				// 	maxValue = data.get(0).inrates;
-				// 	maxValueIndex = tempfinaldata.size();
+				// maxValue = data.get(0).inrates;
+				// maxValueIndex = tempfinaldata.size();
 				// }
 				// 只取各风险级为首的项目加入最终处理，风险级最高的在前面
 				if (i < 7) {
@@ -726,16 +752,16 @@ public class Framework {
 				}
 				if (i < 7) {
 					// if (data.get(1).inrates < 100) {
-						// tempfinaldata.add(data.get(1));
+					// tempfinaldata.add(data.get(1));
 					// }
 				}
 			}
 		}
-		//重装载，把最大的放最后，便于放弃
+		// 重装载，把最大的放最后，便于放弃
 		// for (int i = 0; i < tempfinaldata.size(); i++) {
-		// 	if (i != maxValueIndex) {
-		// 		finaldata.add(tempfinaldata.get(i));
-		// 	}
+		// if (i != maxValueIndex) {
+		// finaldata.add(tempfinaldata.get(i));
+		// }
 		// }
 		// finaldata.add(tempfinaldata.get(maxValueIndex));
 		// finaldata = sortIndexdesc(tempfinaldata);
@@ -782,7 +808,8 @@ public class Framework {
 					aInvestment = new Investment();
 					aInvestment.infoString = iline;
 					// aInvestment.fund = aindex[0] + "," + aindex[1];
-					aInvestment.fund = Framework.getInfoFromJson(iline, "code", ":") + " " + Framework.getInfoFromJson(iline, "name", ":");
+					aInvestment.fund = Framework.getInfoFromJson(iline, "code", ":") + " "
+							+ Framework.getInfoFromJson(iline, "name", ":");
 					// aInvestment.share = Double.valueOf(safeget(aindex, 2));
 					aInvestment.stockshare = Double.valueOf(Framework.getInfoFromJson(iline, "totalshare", ":"));
 					aInvestment.share = Double.valueOf(Framework.getInfoFromJson(iline, "realshare", ":"));
@@ -790,14 +817,17 @@ public class Framework {
 					aInvestment.inrates = Double.valueOf(Framework.getInfoFromJson(iline, "Erate", ":")) - 1;
 					// data.add(aindex);
 					if (aInvestment.inrates < 0) {
-					// 导出的风险指数小于1且总额大于1
+						// 导出的风险指数小于1且总额大于1
 						if (aInvestment.inrates > -1) {
-							/*aInvestment.cost = aInvestment.stockshare * aInvestment.inrates * -1;
-							aInvestment.cost = aInvestment.cost - (aInvestment.stockshare - aInvestment.share);
-							if (aInvestment.cost < 0) {
-								aInvestment.cost = 0.000000001;
-							}
-							aInvestment.cost *= -1;*/
+							/*
+							 * aInvestment.cost = aInvestment.stockshare * aInvestment.inrates * -1;
+							 * aInvestment.cost = aInvestment.cost - (aInvestment.stockshare -
+							 * aInvestment.share);
+							 * if (aInvestment.cost < 0) {
+							 * aInvestment.cost = 0.000000001;
+							 * }
+							 * aInvestment.cost *= -1;
+							 */
 							aInvestment.cost = aInvestment.inrates;
 						}
 					} else if (aInvestment.inrates > 0) {
@@ -822,24 +852,29 @@ public class Framework {
 			log(baos.toString());
 		}
 	}
+
 	public static String produceTradeItem(String iline) {
 		Investment aInvestment;
 		aInvestment = new Investment();
 		aInvestment.infoString = iline;
-		aInvestment.fund = Framework.getInfoFromJson(iline, "code", ":") + "," + Framework.getInfoFromJson(iline, "name", ":");
+		aInvestment.fund = Framework.getInfoFromJson(iline, "code", ":") + ","
+				+ Framework.getInfoFromJson(iline, "name", ":");
 		aInvestment.stockshare = Double.valueOf(Framework.getInfoFromJson(iline, "totalshare", ":"));
 		aInvestment.share = Double.valueOf(Framework.getInfoFromJson(iline, "realshare", ":"));
 		aInvestment.inrates = Double.valueOf(Framework.getInfoFromJson(iline, "Erate", ":")) - 1;
 		aInvestment.cash = Double.valueOf(Framework.getInfoFromJson(iline, "amount", ":"));
 		if (aInvestment.inrates < 0) {
-		// 导出的风险指数小于1且总额大于1
+			// 导出的风险指数小于1且总额大于1
 			if (aInvestment.inrates > -1) {
-				/*aInvestment.cost = aInvestment.stockshare * aInvestment.inrates * -1;
-				aInvestment.cost = aInvestment.cost - (aInvestment.stockshare - aInvestment.share);
-				if (aInvestment.cost < 0) {
-					aInvestment.cost = 0.000000001;
-				}
-				aInvestment.cost *= -1;*/
+				/*
+				 * aInvestment.cost = aInvestment.stockshare * aInvestment.inrates * -1;
+				 * aInvestment.cost = aInvestment.cost - (aInvestment.stockshare -
+				 * aInvestment.share);
+				 * if (aInvestment.cost < 0) {
+				 * aInvestment.cost = 0.000000001;
+				 * }
+				 * aInvestment.cost *= -1;
+				 */
 				aInvestment.cost = aInvestment.inrates;
 			}
 		} else if (aInvestment.inrates > 0) {
@@ -1040,6 +1075,7 @@ public class Framework {
 			}
 		}
 	}
+
 	public static void execute(String price) {
 		String tradepath = basepath + "/tradeList.txt";
 		tradeList.clear();
@@ -1069,7 +1105,7 @@ public class Framework {
 	}
 
 	public static ArrayList<Investment> sortLevelIndex(/* String indexDir, */
-	String name) {
+			String name) {
 		BufferedReader bri;
 		ArrayList<Investment> datas = new ArrayList<Investment>();
 		// ArrayList<String[]> data = new ArrayList<String[]>();
@@ -1089,7 +1125,8 @@ public class Framework {
 					aInvestment = new Investment();
 					aInvestment.infoString = iline;
 					// aInvestment.fund = aindex[0] + "," + aindex[1];
-					aInvestment.fund = Framework.getInfoFromJson(iline, "code", ":") + "," + Framework.getInfoFromJson(iline, "name", ":");
+					aInvestment.fund = Framework.getInfoFromJson(iline, "code", ":") + ","
+							+ Framework.getInfoFromJson(iline, "name", ":");
 					// aInvestment.share = Double.valueOf(safeget(aindex, 2));
 					aInvestment.stockshare = Double.valueOf(Framework.getInfoFromJson(iline, "totalshare", ":"));
 					aInvestment.share = Double.valueOf(Framework.getInfoFromJson(iline, "realshare", ":"));
@@ -1337,11 +1374,11 @@ public class Framework {
 			connection.setRequestProperty("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
 			// 建立实际的连接
 			connection.connect();
-			//请求成功
+			// 请求成功
 			if (connection.getResponseCode() == 200) {
 				InputStream is = connection.getInputStream();
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				//10MB的缓存
+				// 10MB的缓存
 				byte[] buffer = new byte[1024];
 				int len = 0;
 				while ((len = is.read(buffer)) != -1) {
@@ -1357,9 +1394,9 @@ public class Framework {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}		
+		}
 		return result;
-    }
+	}
 
 	public static String getInfoFromJson(String json, String fieldname, String split) {
 		String result = "";
@@ -1421,6 +1458,7 @@ public class Framework {
 			}
 		}
 	}
+
 	public static boolean ifNewTime(int seconds) {
 		long inter = seconds * 1000;
 		Long time = Framework.getNowTimestamp();
@@ -1438,9 +1476,11 @@ public class Framework {
 	public static String gettodate() {
 		return todate;
 	}
+
 	public static String gettodaydate() {
 		return todaydate;
 	}
+
 	public static String refreshtodaydate() {
 		Long today = getNowTimestamp();// - 86400 * 1000;
 		todaydate = stampToDate(String.valueOf(today));
@@ -1464,46 +1504,46 @@ public class Framework {
 			return balanceDir + "/" + name + (Framework.ifback == 1 ? "-S" : "") + ".txt";
 		}
 		switch (date) {
-		case "today":
-			date = gettodate();
-			break;
-		case "yesterday":
-			date = getyesterdate();
-			break;
-		case "lastday":
-			date = getlastdate();
-			break;
-		case "newday":
-			date = getnewdate();
-			break;
-		default:
-			break;
+			case "today":
+				date = gettodate();
+				break;
+			case "yesterday":
+				date = getyesterdate();
+				break;
+			case "lastday":
+				date = getlastdate();
+				break;
+			case "newday":
+				date = getnewdate();
+				break;
+			default:
+				break;
 		}
 		if ("fund".equals(type)) {
 			return fundDir + "/" + date + "/" + name + ".txt";// .replace("000001",
 			// name);
 		}
 		switch (type) {
-		case "trade":
-			return workpath.replace("date", date).replace("record", type)
-					.replace("list", "tradelist");
-		case "index":
-			return workpath.replace("date", date).replace("record", type)
-					.replace("list", name);
-		case "out":
-			return workpath.replace("date", date).replace("record", type)
-					.replace("list", "log");
-		case "record":
-			return workpath.replace("date", date);
-		default:
-			break;
+			case "trade":
+				return workpath.replace("date", date).replace("record", type)
+						.replace("list", "tradelist");
+			case "index":
+				return workpath.replace("date", date).replace("record", type)
+						.replace("list", name);
+			case "out":
+				return workpath.replace("date", date).replace("record", type)
+						.replace("list", "log");
+			case "record":
+				return workpath.replace("date", date);
+			default:
+				break;
 		}
 		if ("".equals(name)) {
 			return workpath.replace("date", date).replace("record", type)
-		.replace("/list.txt", name);
+					.replace("/list.txt", name);
 		} else {
 			return workpath.replace("date", date).replace("record", type)
-					.replace("list", name);	
+					.replace("list", name);
 		}
 	}
 
