@@ -128,7 +128,15 @@ public class Investment {
 		ArrayList<Investment> investments = loads(aim);
 		Investment thisInvestment = null;
 		share *= -1;
-		if (share != 0.000000001) {			
+		if (share != 0.000000001) {		
+			String path = Framework.getPath("coin", "paint", "processInfo");
+			JSONObject param = verify.loadObject(path);
+			double bar = param.optDouble("bar");	
+			if (bar < 1.0005) {
+				if (share > 0.05) {
+					share = 0.05;
+				}
+			}
 			double preCost = gettotalcost(investments);
 			double preCash = gettotalcash(investments);
 			if (type == 1) {
@@ -155,14 +163,11 @@ public class Investment {
 			double deltaCost = preCost - nowCost;
 			double deltaCash = nowCash - preCash;
 			deltaCost = deltaCost == 0 ? 1 : deltaCost;
-			String path = Framework.getPath("coin", "paint", "processInfo");
-			JSONObject param = verify.loadObject(path);
 			//path = Framework.getPath("coin", "paint", "listInfo");
 			JSONArray coinsInfo = param.getJSONArray("coins");
 			path = Framework.getPath("coin", "paint", "list");
 			JSONArray coins = verify.loadArray(path);
 			//param.put("coins", list);
-			double bar = param.optDouble("bar");
 			Double stocktotalshare = Investment.gettotalshare(investments, -1);
 			double realshare = stocktotalshare; // * share; // Math.round(stocktotalshare * share * 10000000) / 10000000.0;
 			if (deltaCash / deltaCost > bar && realshare > 0.00001) {
