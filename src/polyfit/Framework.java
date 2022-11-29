@@ -138,10 +138,12 @@ public class Framework {
 						}
 					}
 					recordInfo.put("struct", 0);
-					record.put("amount", 40);
-					record.put("cost", 0);
+					double cst = 1666;
+					double csh = 1692.97;
+					record.put("amount", 40 + (csh - cst) / 40);
+					record.put("cost", cst);
 					record.put("balance", 0);
-					record.put("cash", 0);
+					record.put("cash", csh);
 					coins.put(i, record);
 					System.out.println("restore config data " + aim);
 				}
