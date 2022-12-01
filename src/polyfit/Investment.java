@@ -386,7 +386,7 @@ public class Investment {
 								reply = returnString.split(",");
 								String ID = reply[0];
 								if (id.equals(ID) || "id".equals(ID)) {
-									if ((Framework.getNowTimestamp() - new Long(ID) < 5000)) {
+									if ("id".equals(ID) || (Framework.getNowTimestamp() - new Long(ID) < 5000)) {
 										if ("0".equals(reply[4])) {
 											goon = true;
 											if ("".equals(reply[2])) {
