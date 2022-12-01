@@ -385,7 +385,7 @@ public class Investment {
 								returnString = files[j].getName();
 								reply = returnString.split(",");
 								String ID = reply[0];
-								if (id.equals(ID)) {
+								if (id.equals(ID) || "id".equals(ID)) {
 									if ((Framework.getNowTimestamp() - new Long(ID) < 5000)) {
 										if ("0".equals(reply[4])) {
 											goon = true;
@@ -406,8 +406,10 @@ public class Investment {
 									}
 									Thread.sleep(200);
 									files[j].delete();
-									out = true;
-									break;
+									if (!"id".equals(ID)) {
+										out = true;
+										break;
+									}
 								}
 							}
 						} catch (InterruptedException e) {
