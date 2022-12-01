@@ -568,11 +568,17 @@ public class verify {
 			if (Framework.ifback == 0) {
 				url = "https://www.okx.com/api/v5/market/index-tickers?instId=BTC-USD".replace("instId=BTC-USD", instId);
 				//url = ("https://www.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1s&limit=120").replace("BTCUSDT", type.replace("-", ""));
-				json = getInfoFromNet(url);
-				jsonArray = json.getJSONArray("data");
-				json = (JSONObject)jsonArray.get(0);
-				value = json.getString("idxPx");
-				line = json.getString("ts") + "," + value;
+				try {
+					json = getInfoFromNet(url);
+					jsonArray = json.getJSONArray("data");
+					json = (JSONObject)jsonArray.get(0);
+					value = json.getString("idxPx");
+					line = json.getString("ts") + "," + value;
+				} catch (Exception e) {
+					// TODO: handle exception
+					e.printStackTrace();
+					value = "";
+				}
 			} else {
 				line = verify.loadline(Framework.getPath(temppath, "fund", type + "_data"), Framework.systime);
 				if (line == null || "".equals(line)) {//.indexOf(",") != -1) {

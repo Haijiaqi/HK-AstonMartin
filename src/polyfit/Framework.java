@@ -144,9 +144,9 @@ public class Framework {
 					double csh = Investment.gettotalcash(investments);
 					recordInfo.put("struct", 0);
 					record.put("amount", 40 + (csh - cst) / 40);
-					record.put("cost", cst);
+					record.put("cost", csh - cst);
 					record.put("balance", 0);
-					record.put("cash", csh);
+					record.put("cash", 0);
 					coins.put(i, record);
 					System.out.println("restore config data " + aim);
 				}
